@@ -18,12 +18,14 @@ def to_dataset(hdulist, weight=True):
     '''
     primary_hdu = hdulist['primary']
     history_hdu = hdulist['history']
-    psrparam_hdu = hdulist['psrparam']
-    polyco_hdu = hdulist['polyco']
+    #psrparam_hdu = hdulist['psrparam']
+    #polyco_hdu = hdulist['polyco']
     subint_hdu = hdulist['subint']
     
     data = scaled_data(subint_hdu, weight)
     data_vars = pol_split(data, subint_hdu.header['pol_type'])
+    
+    # Add data vars
     duration = subint_hdu.data['tsubint']
     weights = subint_hdu.data['dat_wts']
     assert duration.dtype == np.dtype('>f8')
@@ -31,6 +33,7 @@ def to_dataset(hdulist, weight=True):
     data_vars['duration'] = (['offset'], duration.astype('float64'))
     data_vars['weights'] = (['offset', 'freq'], weights.astype('float32'))
     
+    # Build up coordinates
     nsub, npol, nchan, nbin = data.shape
     offset = subint_hdu.data['offs_sub']
     offset = offset + primary_hdu.header['stt_offs']
