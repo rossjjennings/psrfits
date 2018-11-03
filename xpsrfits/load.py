@@ -24,6 +24,7 @@ def to_dataset(hdulist, weight=True):
     
     data = get_data(subint_hdu, weight)
     data_vars = pol_split(data, subint_hdu.header['pol_type'])
+    coords = get_coords(hdulist)
     
     # Add data vars
     duration = subint_hdu.data['tsubint']
@@ -39,6 +40,7 @@ def to_dataset(hdulist, weight=True):
              'backend': primary_hdu.header['backend'],
              'pol_type': subint_hdu.header['pol_type'],
              'start_sec': primary_hdu.header['stt_smjd']}
+    
     ds = xr.Dataset(data_vars, coords, attrs)
     
     return ds
@@ -78,7 +80,7 @@ def get_coords(hdulist):
     subint_hdu = hdulist['subint']
     
     time = subint_hdu.data['offs_sub']
-    time = offset + primary_hdu.header['stt_offs']
+    time = time + primary_hdu.header['stt_offs']
     
     dat_freq = subint_hdu.data['dat_freq']
     assert dat_freq.dtype == np.dtype('>f8')
@@ -87,7 +89,7 @@ def get_coords(hdulist):
     assert all(np.all(row == freq) for row in dat_freq)
     
     # At least for NANOGrav data, the TBIN in SUBINT is wrong.
-    phase = history_hdu.data['nbin'][-1]*history_hdu.data['tbin'][-1]
+    phase = np.arange(history_hdu.data['nbin'][-1])*history_hdu.data['tbin'][-1]
     phase = phase*1000 # s -> ms
     
     coords = {'time': time,
@@ -105,23 +107,23 @@ def pol_split(data, pol_type):
     '''
     if pol_type == 'AA+BB':
         I, = np.transpose(data, (1, 0, 2, 3))
-        data_vars = {'I': (['offset', 'freq', 'phase'], AA)}
+        data_vars = {'I': (['time', 'freq', 'phase'], AA)}
     elif pol_type == 'AABB':
         AA, BB = np.transpose(data, (1, 0, 2, 3))
-        data_vars = {'AA': (['offset', 'freq', 'phase'], AA),
-                     'BB': (['offset', 'freq', 'phase'], BB)}
+        data_vars = {'AA': (['time', 'freq', 'phase'], AA),
+                     'BB': (['time', 'freq', 'phase'], BB)}
     elif pol_type == 'AABBCRCI':
         AA, BB, CR, CI = np.transpose(data, (1, 0, 2, 3))
-        data_vars = {'AA': (['offset', 'freq', 'phase'], AA),
-                     'BB': (['offset', 'freq', 'phase'], BB),
-                     'CR': (['offset', 'freq', 'phase'], CR),
-                     'CI': (['offset', 'freq', 'phase'], CI)}
+        data_vars = {'AA': (['time', 'freq', 'phase'], AA),
+                     'BB': (['time', 'freq', 'phase'], BB),
+                     'CR': (['time', 'freq', 'phase'], CR),
+                     'CI': (['time', 'freq', 'phase'], CI)}
     elif pol_type == 'IQUV':
         I, Q, U, V = np.transpose(data, (1, 0, 2, 3))
-        data_vars = {'I': (['offset', 'freq', 'phase'], I),
-                     'Q': (['offset', 'freq', 'phase'], Q),
-                     'U': (['offset', 'freq', 'phase'], U),
-                     'V': (['offset', 'freq', 'phase'], V)}
+        data_vars = {'I': (['time', 'freq', 'phase'], I),
+                     'Q': (['time', 'freq', 'phase'], Q),
+                     'U': (['time', 'freq', 'phase'], U),
+                     'V': (['time', 'freq', 'phase'], V)}
     else:
         raise ValueError("Polarization type not recognized.")
     
