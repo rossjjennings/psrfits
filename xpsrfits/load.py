@@ -22,7 +22,7 @@ def to_dataset(hdulist, weight=True):
     #polyco_hdu = hdulist['polyco']
     subint_hdu = hdulist['subint']
     
-    data = scaled_data(subint_hdu, weight)
+    data = get_data(subint_hdu, weight)
     data_vars = pol_split(data, subint_hdu.header['pol_type'])
     
     # Add data vars
@@ -32,22 +32,6 @@ def to_dataset(hdulist, weight=True):
     assert weights.dtype == np.dtype('>f4')
     data_vars['duration'] = (['offset'], duration.astype('float64'))
     data_vars['weights'] = (['offset', 'freq'], weights.astype('float32'))
-    
-    # Build up coordinates
-    nsub, npol, nchan, nbin = data.shape
-    offset = subint_hdu.data['offs_sub']
-    offset = offset + primary_hdu.header['stt_offs']
-    dat_freq = subint_hdu.data['dat_freq']
-    assert dat_freq.dtype == np.dtype('>f8')
-    freq = dat_freq[0].astype('float64') # convert to native byte order
-    # All other rows should be the same
-    assert all(np.all(row == freq) for row in dat_freq)
-    # At least for NANOGrav data, the TBIN in SUBINT is wrong.
-    phase = np.arange(nbin)*history_hdu.data['tbin'][-1]*1000 # in ms
-    coords = {'offset': offset,
-              'freq': freq,
-              'phase': phase,
-              'MJD': primary_hdu.header['stt_imjd']}
     
     attrs = {'source': primary_hdu.header['src_name'],
              'telescope': primary_hdu.header['telescop'],
@@ -59,7 +43,7 @@ def to_dataset(hdulist, weight=True):
     
     return ds
     
-def scaled_data(subint_hdu, weight=True):
+def get_data(subint_hdu, weight=True):
     '''
     Construct an array of data in meaningful units from the 'SUBINT' HDU
     of a PSRFITS file by applying the scaling, offset, and weights given
@@ -84,6 +68,34 @@ def scaled_data(subint_hdu, weight=True):
     data = (scale*data.transpose((3,0,1,2)) + offset).transpose((1,2,3,0))
     
     return data
+
+def get_coords(hdulist):
+    '''
+    Get the time, frequency, and phase coordinates from a PSRFITS file.
+    '''
+    primary_hdu = hdulist['primary']
+    history_hdu = hdulist['history']
+    subint_hdu = hdulist['subint']
+    
+    time = subint_hdu.data['offs_sub']
+    time = offset + primary_hdu.header['stt_offs']
+    
+    dat_freq = subint_hdu.data['dat_freq']
+    assert dat_freq.dtype == np.dtype('>f8')
+    freq = dat_freq[0].astype('float64') # convert to native byte order
+    # All other rows should be the same
+    assert all(np.all(row == freq) for row in dat_freq)
+    
+    # At least for NANOGrav data, the TBIN in SUBINT is wrong.
+    phase = history_hdu.data['nbin'][-1]*history_hdu.data['tbin'][-1]
+    phase = phase*1000 # s -> ms
+    
+    coords = {'time': time,
+              'freq': freq,
+              'phase': phase,
+              'MJD': primary_hdu.header['stt_imjd']}
+    
+    return coords
 
 def pol_split(data, pol_type):
     '''
