@@ -3,8 +3,20 @@ import xarray as xr
 from astropy.io import fits
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, EarthLocation
+from xpsrfits.polarization import pol_split
+from xpsrfits.dispersion import dedisperse
+from xpsrfits.baseline import remove_baseline
 
-def open(filename, weight=True):
+def ingest(filename, weight=True):
+    '''
+    Load a PSRFITS file, dedisperse and remove the baseline.
+    '''
+    ds = load(filename, weight)
+    ds = dedisperse(ds)
+    ds = remove_baseline(ds)
+    return ds
+
+def load(filename, weight=True):
     '''
     Open a PSRFITS file and load the contents into an xarray Dataset.
     '''
@@ -39,9 +51,11 @@ def to_dataset(hdulist, weight=True):
              'telescope': primary_hdu.header['telescop'],
              'frontend': primary_hdu.header['frontend'],
              'backend': primary_hdu.header['backend'],
+             'observer': primary_hdu.header['observer'],
              'center_freq': primary_hdu.header['obsfreq'],
              'DM': subint_hdu.header['DM'],
              'pol_type': subint_hdu.header['pol_type'],
+             'fd_poln': primary_hdu.header['fd_poln'],
              'start_sec': primary_hdu.header['stt_smjd']}
     
     ds = xr.Dataset(data_vars, coords, attrs)
@@ -103,33 +117,3 @@ def get_coords(hdulist):
               'MJD': primary_hdu.header['stt_imjd']}
     
     return coords
-
-def pol_split(data, pol_type):
-    '''
-    Split a PSRFITS dataset into variables representing the polarizations.
-    Return the result as a dictionary of data variables suitable for 
-    constructing an xarray Dataset.
-    '''
-    if pol_type == 'AA+BB':
-        I, = np.transpose(data, (1, 0, 2, 3))
-        data_vars = {'I': (['time', 'freq', 'phase'], AA)}
-    elif pol_type == 'AABB':
-        AA, BB = np.transpose(data, (1, 0, 2, 3))
-        data_vars = {'AA': (['time', 'freq', 'phase'], AA),
-                     'BB': (['time', 'freq', 'phase'], BB)}
-    elif pol_type == 'AABBCRCI':
-        AA, BB, CR, CI = np.transpose(data, (1, 0, 2, 3))
-        data_vars = {'AA': (['time', 'freq', 'phase'], AA),
-                     'BB': (['time', 'freq', 'phase'], BB),
-                     'CR': (['time', 'freq', 'phase'], CR),
-                     'CI': (['time', 'freq', 'phase'], CI)}
-    elif pol_type == 'IQUV':
-        I, Q, U, V = np.transpose(data, (1, 0, 2, 3))
-        data_vars = {'I': (['time', 'freq', 'phase'], I),
-                     'Q': (['time', 'freq', 'phase'], Q),
-                     'U': (['time', 'freq', 'phase'], U),
-                     'V': (['time', 'freq', 'phase'], V)}
-    else:
-        raise ValueError("Polarization type not recognized.")
-    
-    return data_vars
