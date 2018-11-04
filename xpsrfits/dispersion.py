@@ -19,7 +19,14 @@ def fft_roll(a, shift):
     phase = -2j*pi*shift*rfftfreq(a.shape[-1])
     return irfft(rfft(a)*np.exp(phase))
 
-def dedisperse(ds, DM=None):
+def weighted_center_freq(ds):
+    '''
+    Calculate the center frequency of the observation in the manner of PyPulse
+    by weighting each channel frequency by the channel weight.
+    '''
+    return (np.sum(ds.freq*ds.weights)/np.sum(ds.weights)).item()
+
+def dedisperse(ds, DM=None, weight_center_freq=False):
     '''
     Dedisperse the data with the given DM.
     If `DM` is `None`, use the DM attribute of `ds`.
@@ -28,14 +35,18 @@ def dedisperse(ds, DM=None):
         DM = ds.DM
     
     K = 1/2.41e-4
-    time_delays = K*DM*(ds.center_freq**-2 - ds.freq.values**-2)
+    if weight_center_freq:
+        center_freq = weighted_center_freq(ds)
+    else:
+        center_freq = ds.center_freq
+    time_delays = K*DM*(center_freq**-2 - ds.freq.values**-2)
     
-    tbin = ds.phase.values[1]
-    bin_delays = 1000*time_delays/tbin
+    tbin = ds.phase.values[1]/1000 # convert from ms to sec
+    bin_delays = time_delays/tbin
     
     new_data_vars = {}
     for pol in get_pols(ds):
-        dedispersed_pol = fft_roll(ds.data_vars[pol].values, bin_delays)
-        new_data_vars.update({pol: (['time', 'freq', 'phase'], dedispersed_pol)})
+        dedispersed_arr = fft_roll(ds.data_vars[pol].values, bin_delays)
+        new_data_vars.update({pol: (['time', 'freq', 'phase'], dedispersed_arr)})
     
     return xr.Dataset(new_data_vars, ds.coords, ds.attrs)
