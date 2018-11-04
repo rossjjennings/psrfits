@@ -3,17 +3,22 @@ import xarray as xr
 from astropy.io import fits
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, EarthLocation
-from xpsrfits.polarization import pol_split
+from xpsrfits.polarization import pol_split, pscrunch, coherence_to_stokes
 from xpsrfits.dispersion import dedisperse
 from xpsrfits.baseline import remove_baseline
 
-def ingest(filename, weight=True):
+def ingest(filename, weight=True, DM=None, wcfreq=False,
+           baseline_method='median', output_polns='IQUV'):
     '''
     Load a PSRFITS file, dedisperse and remove the baseline.
     '''
     ds = load(filename, weight)
-    ds = dedisperse(ds)
-    ds = remove_baseline(ds)
+    ds = dedisperse(ds, DM, weight_center_freq=wcfreq)
+    ds = remove_baseline(ds, method=baseline_method)
+    if output_polns == 'I':
+        ds = pscrunch(ds)
+    elif output_polns == 'IQUV':
+        ds = coherence_to_stokes(ds) 
     return ds
 
 def load(filename, weight=True):
