@@ -31,13 +31,16 @@ def to_dataset(hdulist, weight=True):
     weights = subint_hdu.data['dat_wts']
     assert duration.dtype == np.dtype('>f8')
     assert weights.dtype == np.dtype('>f4')
-    data_vars['duration'] = (['offset'], duration.astype('float64'))
-    data_vars['weights'] = (['offset', 'freq'], weights.astype('float32'))
+    data_vars['duration'] = (['time'], duration.astype('float64'))
+    data_vars['weights'] = (['time', 'freq'], weights.astype('float32'))
     
+    assert primary_hdu.header['obsfreq'] == history_hdu.data['ctr_freq'][-1]
     attrs = {'source': primary_hdu.header['src_name'],
              'telescope': primary_hdu.header['telescop'],
              'frontend': primary_hdu.header['frontend'],
              'backend': primary_hdu.header['backend'],
+             'center_freq': primary_hdu.header['obsfreq'],
+             'DM': subint_hdu.header['DM'],
              'pol_type': subint_hdu.header['pol_type'],
              'start_sec': primary_hdu.header['stt_smjd']}
     
@@ -66,8 +69,10 @@ def get_data(subint_hdu, weight=True):
     
     scale = scale.reshape(nsub, npol, nchan)
     offset = offset.reshape(nsub, npol, nchan)
-    weights = weights[...,np.newaxis]
+    weights = weights.reshape(nsub, 1, nchan, 1)
     data = (scale*data.transpose((3,0,1,2)) + offset).transpose((1,2,3,0))
+    if weight:
+        data = weights*data
     
     return data
 
