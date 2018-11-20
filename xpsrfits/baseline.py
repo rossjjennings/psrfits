@@ -6,7 +6,7 @@ def remove_baseline(ds, method='median'):
     '''
     Remove the frequency-dependent baseline from an observation.
     '''
-    if method == offpulse:
+    if method == 'offpulse':
         size = ds.phase.size//8
         profile = ds.I.groupby('phase').mean()
         opw = offpulse_window(profile, size)
