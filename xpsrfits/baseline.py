@@ -31,7 +31,7 @@ def offpulse_window(profile, size):
     minimizing the integral of the pulse profile.
     '''
     bins = np.arange(len(profile))
-    lower = np.argmin(rolling_sum(profile, size))
+    lower = np.argmin(rolling_sum(profile.values, size))
     upper = lower + size
     return np.logical_and(lower <= bins, bins < upper)
 
