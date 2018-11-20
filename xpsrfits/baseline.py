@@ -18,7 +18,7 @@ def remove_baseline(ds, method='median'):
         if method == 'median':
             baseline = arr.median(dim='phase')
         elif method == 'offpulse':
-            baseline = arr.isel(phase=opw).mean()
+            baseline = arr.isel(phase=opw).mean(dim='phase')
         adjusted_arr = arr - baseline
         new_data_vars.update({pol: adjusted_arr})
     
