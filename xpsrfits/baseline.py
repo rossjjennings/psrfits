@@ -33,7 +33,7 @@ def offpulse_window(profile, size):
     bins = np.arange(len(profile))
     lower = np.argmin(rolling_sum(profile, size))
     upper = lower + size
-    return lower <= bins < upper
+    return np.logical_and(lower <= bins, bins < lower)
 
 def rolling_sum(arr, size):
     '''
