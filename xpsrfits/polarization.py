@@ -9,7 +9,7 @@ def pol_split(data, pol_type):
     '''
     if pol_type == 'AA+BB':
         I, = np.transpose(data, (1, 0, 2, 3))
-        data_vars = {'I': (['time', 'freq', 'phase'], AA)}
+        data_vars = {'I': (['time', 'freq', 'phase'], I)}
     elif pol_type == 'AABB':
         AA, BB = np.transpose(data, (1, 0, 2, 3))
         data_vars = {'AA': (['time', 'freq', 'phase'], AA),
@@ -56,7 +56,9 @@ def pscrunch(ds):
         new_data_vars = {'I': ds.AA + ds.BB}
     else:
         raise ValueError("Polarization type not recognized.")
-    return xr.Dataset(new_data_vars, ds.coords, ds.attrs)
+    new_attrs = ds.attrs.copy()
+    new_attrs['POL_TYPE'] = 'AA+BB'
+    return xr.Dataset(new_data_vars, ds.coords, new_attrs)
 
 def coherence_to_stokes(ds):
     '''
@@ -74,4 +76,6 @@ def coherence_to_stokes(ds):
                          'Q': 2*ds.CR,
                          'U': 2*ds.CI,
                          'V': ds.AA - ds.BB}
-    return xr.Dataset(new_data_vars, ds.coords, ds.attrs)
+    new_attrs = ds.attrs.copy()
+    new_attrs['POL_TYPE'] = 'IQUV'
+    return xr.Dataset(new_data_vars, ds.coords, new_attrs)
