@@ -57,7 +57,7 @@ def pscrunch(ds):
     else:
         raise ValueError("Polarization type not recognized.")
     new_attrs = ds.attrs.copy()
-    new_attrs['POL_TYPE'] = 'AA+BB'
+    new_attrs['pol_type'] = 'AA+BB'
     return xr.Dataset(new_data_vars, ds.coords, new_attrs)
 
 def coherence_to_stokes(ds):
@@ -77,5 +77,5 @@ def coherence_to_stokes(ds):
                          'U': 2*ds.CI,
                          'V': ds.AA - ds.BB}
     new_attrs = ds.attrs.copy()
-    new_attrs['POL_TYPE'] = 'IQUV'
+    new_attrs['pol_type'] = 'IQUV'
     return xr.Dataset(new_data_vars, ds.coords, new_attrs)
