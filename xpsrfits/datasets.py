@@ -8,7 +8,7 @@ from xpsrfits.dispersion import dedisperse
 from xpsrfits.baseline import remove_baseline
 
 def ingest(filename, weight=True, DM=None, wcfreq=False,
-           baseline_method='median', output_polns='IQUV'):
+           baseline_method='offpulse', output_polns='IQUV'):
     '''
     Load a PSRFITS file, dedisperse and remove the baseline.
     '''
