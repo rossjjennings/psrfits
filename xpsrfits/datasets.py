@@ -1,5 +1,6 @@
 import numpy as np
 import xarray as xr
+import warnings
 from astropy.io import fits
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, EarthLocation
@@ -105,12 +106,15 @@ def get_coords(hdulist):
     
     time = subint_hdu.data['offs_sub']
     time = time + primary_hdu.header['stt_offs']
+    mjd = primary_hdu.header['stt_imjd']
     
     dat_freq = subint_hdu.data['dat_freq']
     assert dat_freq.dtype == np.dtype('>f8')
     freq = dat_freq[0].astype('float64') # convert to native byte order
     # All other rows should be the same
-    assert all(np.all(row == freq) for row in dat_freq)
+    if not all(np.all(row == freq) for row in dat_freq):
+        msg = 'At MJD {}: Not all frequencies match'
+        warnings.warn(msg.format(mjd), RuntimeWarning)
     
     # At least for NANOGrav data, the TBIN in SUBINT is wrong.
     phase = np.arange(history_hdu.data['nbin'][-1])*history_hdu.data['tbin'][-1]
@@ -119,6 +123,6 @@ def get_coords(hdulist):
     coords = {'time': time,
               'freq': freq,
               'phase': phase,
-              'MJD': primary_hdu.header['stt_imjd']}
+              'MJD': mjd}
     
     return coords
