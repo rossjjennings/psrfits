@@ -47,7 +47,7 @@ def to_dataset(hdulist, weight=True):
     # Add data vars
     duration = subint_hdu.data['tsubint']
     weights = subint_hdu.data['dat_wts']
-    duration = native_byteorder(duration)
+    duration = native_byteorder(duration).reshape(coords['time'].size, coords['freq'].size)
     weights = native_byteorder(weights)
     data_vars['duration'] = (['time'], duration)
     data_vars['weights'] = (['time', 'freq'], weights)
