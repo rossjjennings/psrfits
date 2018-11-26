@@ -52,13 +52,15 @@ def to_dataset(hdulist, weight=True):
     data_vars['duration'] = (['time'], duration)
     data_vars['weights'] = (['time', 'freq'], weights)
     
-    assert primary_hdu.header['obsfreq'] == history_hdu.data['ctr_freq'][-1]
+    if primary_hdu.header['obsfreq'] != history_hdu.data['ctr_freq'][-1]:
+        msg = 'Last CTR_FREQ in history does not match OBSFREQ (using history value)'
+        warnings.warn(msg, RuntimeWarning)
     attrs = {'source': primary_hdu.header['src_name'],
              'telescope': primary_hdu.header['telescop'],
              'frontend': primary_hdu.header['frontend'],
              'backend': primary_hdu.header['backend'],
              'observer': primary_hdu.header['observer'],
-             'center_freq': primary_hdu.header['obsfreq'],
+             'center_freq': history_hdu.data['ctr_freq'][-1],
              'DM': subint_hdu.header['DM'],
              'pol_type': subint_hdu.header['pol_type'],
              'fd_poln': primary_hdu.header['fd_poln'],
