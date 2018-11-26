@@ -47,10 +47,10 @@ def to_dataset(hdulist, weight=True):
     # Add data vars
     duration = subint_hdu.data['tsubint']
     weights = subint_hdu.data['dat_wts']
-    assert duration.dtype == np.dtype('>f8')
-    assert weights.dtype == np.dtype('>f4')
-    data_vars['duration'] = (['time'], duration.astype('float64'))
-    data_vars['weights'] = (['time', 'freq'], weights.astype('float32'))
+    duration = native_byteorder(duration)
+    weights = native_byteorder(weights)
+    data_vars['duration'] = (['time'], duration)
+    data_vars['weights'] = (['time', 'freq'], weights)
     
     assert primary_hdu.header['obsfreq'] == history_hdu.data['ctr_freq'][-1]
     attrs = {'source': primary_hdu.header['src_name'],
@@ -109,8 +109,8 @@ def get_coords(hdulist):
     mjd = primary_hdu.header['stt_imjd']
     
     dat_freq = subint_hdu.data['dat_freq']
-    assert dat_freq.dtype == np.dtype('>f8')
-    freq = dat_freq[0].astype('float64') # convert to native byte order
+    # convert to native byte order
+    dat_freq = native_byteorder(dat_freq)
     # All other rows should be the same
     if not all(np.all(row == freq) for row in dat_freq):
         msg = 'At MJD {}: Not all frequencies match'
@@ -126,3 +126,10 @@ def get_coords(hdulist):
               'MJD': mjd}
     
     return coords
+
+def native_byteorder(arr):
+    '''
+    Convert an array to native byte order if it is not already.
+    '''
+    if arr.dtype.byteorder != '=':
+        return arr.byteswap().newbyteorder()
