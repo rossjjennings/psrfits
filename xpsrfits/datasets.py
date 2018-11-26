@@ -41,17 +41,19 @@ def to_dataset(hdulist, weight=True):
     subint_hdu = hdulist['subint']
     
     data = get_data(subint_hdu, weight)
-    nsub, npol, nchan, nbin = data.shape
     data_vars = pol_split(data, subint_hdu.header['pol_type'])
     coords = get_coords(hdulist)
     
     # Add data vars
     duration = subint_hdu.data['tsubint']
-    weights = subint_hdu.data['dat_wts'].reshape(nsub, nchan)
+    weights = subint_hdu.data['dat_wts']
     duration = native_byteorder(duration)
     weights = native_byteorder(weights)
     data_vars['duration'] = (['time'], duration)
-    data_vars['weights'] = (['time', 'freq'], weights)
+    if coords['freq'].ndim == 0:
+        data_vars['weights'] = (['time'], weights)
+    else:
+        data_vars['weights'] = (['time', 'freq'], weights)
     
     if primary_hdu.header['obsfreq'] != history_hdu.data['ctr_freq'][-1]:
         msg = 'Last CTR_FREQ in history does not match OBSFREQ (using history value)'
