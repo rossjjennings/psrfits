@@ -19,7 +19,7 @@ def ingest(filename, weight=True, DM=None, wcfreq=False,
     if output_polns == 'I':
         ds = pscrunch(ds)
     elif output_polns == 'IQUV':
-        ds = coherence_to_stokes(ds) 
+        ds = to_stokes(ds)
     return ds
 
 def load(filename, weight=True):

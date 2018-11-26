@@ -60,12 +60,18 @@ def pscrunch(ds):
     new_attrs['pol_type'] = 'AA+BB'
     return xr.Dataset(new_data_vars, ds.coords, new_attrs)
 
-def coherence_to_stokes(ds):
+def to_stokes(ds):
     '''
     Transform coherence (AABBCRCI) data to Stokes parameters (IQUV).
+    If input is already Stokes, leave it alone.
+    If input has one or two polarizations, return I only.
     '''
-    if ds.pol_type != 'AABBCRCI':
-        raise ValueError("Input is not coherence data!")
+    if ds.pol_type == 'IQUV':
+        return ds
+    elif ds.pol_type == ['AABB', 'AA+BB']:
+        return pscrunch(ds)
+    elif ds.pol_type != 'AABBCRCI':
+        raise ValueError("Polarization type not recognized.")
     if ds.fd_poln == 'LIN':
         new_data_vars = {'I': ds.AA + ds.BB,
                          'Q': ds.AA - ds.BB,
