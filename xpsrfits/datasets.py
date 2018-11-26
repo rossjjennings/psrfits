@@ -85,7 +85,7 @@ def get_data(subint_hdu, weight=True):
     # state assumptions explicitly
     assert scale.shape == (nsub, npol*nchan)
     assert offset.shape == (nsub, npol*nchan)
-    assert weights.shape == (nsub, nchan)
+    assert weights.size == nsub*nchan # Less aggressive check to accomodate templates
     
     scale = scale.reshape(nsub, npol, nchan)
     offset = offset.reshape(nsub, npol, nchan)
