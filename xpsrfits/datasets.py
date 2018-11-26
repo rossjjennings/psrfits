@@ -50,10 +50,7 @@ def to_dataset(hdulist, weight=True):
     duration = native_byteorder(duration)
     weights = native_byteorder(weights)
     data_vars['duration'] = (['time'], duration)
-    if coords['freq'].ndim == 0:
-        data_vars['weights'] = (['time'], weights)
-    else:
-        data_vars['weights'] = (['time', 'freq'], weights)
+    data_vars['weights'] = (['time', 'freq'], weights)
     
     if primary_hdu.header['obsfreq'] != history_hdu.data['ctr_freq'][-1]:
         msg = 'Last CTR_FREQ in history does not match OBSFREQ (using history value)'
@@ -114,7 +111,7 @@ def get_coords(hdulist):
     mjd = primary_hdu.header['stt_imjd']
     
     dat_freq = subint_hdu.data['dat_freq']
-    freq = native_byteorder(dat_freq[0])
+    freq = np.atleast_1d(native_byteorder(dat_freq[0]))
     # All other rows should be the same
     if not all(np.all(row == freq) for row in dat_freq):
         msg = 'At MJD {}: Not all frequencies match'
