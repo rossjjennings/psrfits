@@ -134,3 +134,5 @@ def native_byteorder(arr):
     '''
     if arr.dtype.byteorder != '=':
         return arr.byteswap().newbyteorder()
+    else:
+        return arr
