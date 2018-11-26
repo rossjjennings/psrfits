@@ -4,7 +4,7 @@ import warnings
 from astropy.io import fits
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, EarthLocation
-from xpsrfits.polarization import pol_split, pscrunch, coherence_to_stokes
+from xpsrfits.polarization import pol_split, pscrunch, to_stokes
 from xpsrfits.dispersion import dedisperse
 from xpsrfits.baseline import remove_baseline
 
