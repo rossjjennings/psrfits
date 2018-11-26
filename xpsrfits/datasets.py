@@ -109,8 +109,7 @@ def get_coords(hdulist):
     mjd = primary_hdu.header['stt_imjd']
     
     dat_freq = subint_hdu.data['dat_freq']
-    # convert to native byte order
-    dat_freq = native_byteorder(dat_freq)
+    freq = native_byteorder(dat_freq[0])
     # All other rows should be the same
     if not all(np.all(row == freq) for row in dat_freq):
         msg = 'At MJD {}: Not all frequencies match'
