@@ -12,7 +12,7 @@ def remove_baseline(ds, method='median'):
         profile = I.groupby('phase').mean()
         opw = offpulse_window(profile, size)
     
-    new_data_vars = {}
+    new_data_vars = dict(ds.data_vars)
     for pol in get_pols(ds):
         arr = ds.data_vars[pol]
         if method == 'median':
