@@ -44,7 +44,7 @@ def dedisperse(ds, DM=None, weight_center_freq=False):
     tbin = ds.phase.values[1]/1000 # convert from ms to sec
     bin_delays = time_delays/tbin
     
-    new_data_vars = {}
+    new_data_vars = ds.data_vars
     for pol in get_pols(ds):
         dedispersed_arr = fft_roll(ds.data_vars[pol].values, bin_delays)
         new_data_vars.update({pol: (['time', 'freq', 'phase'], dedispersed_arr)})

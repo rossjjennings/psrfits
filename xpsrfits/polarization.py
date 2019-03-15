@@ -50,10 +50,13 @@ def pscrunch(ds):
     '''
     Return a dataset containing only the total intensity component of the input.
     '''
+    new_data_vars = ds.data_vars
+    for pol in get_pols(ds):
+        del new_data_vars[pol]
     if ds.pol_type in ['AA+BB', 'IQUV']:
-        new_data_vars = {'I': ds.I}
+        new_data_vars['I'] = ds.I
     elif ds.pol_type == ['AABB', 'AABBCRCI']:
-        new_data_vars = {'I': ds.AA + ds.BB}
+        new_data_vars['I'] = ds.AA + ds.BB
     else:
         raise ValueError("Polarization type not recognized.")
     new_attrs = ds.attrs.copy()
@@ -72,16 +75,19 @@ def to_stokes(ds):
         return pscrunch(ds)
     elif ds.pol_type != 'AABBCRCI':
         raise ValueError("Polarization type not recognized.")
+    new_data_vars = ds.data_vars
+    for pol in get_pols(ds):
+        del new_data_vars[pol]
     if ds.fd_poln == 'LIN':
-        new_data_vars = {'I': ds.AA + ds.BB,
-                         'Q': ds.AA - ds.BB,
-                         'U': 2*ds.CR,
-                         'V': 2*ds.CI      }
+        new_data_vars['I'] = ds.AA + ds.BB
+        new_data_vars['Q'] =  ds.AA - ds.BB
+        new_data_vars['U'] = 2*ds.CR
+        new_data_vars['V'] = 2*ds.CI
     elif ds.fd_poln == 'CIRC':
-        new_data_vars = {'I': ds.AA + ds.BB,
-                         'Q': 2*ds.CR,
-                         'U': 2*ds.CI,
-                         'V': ds.AA - ds.BB}
+        new_data_vars['I'] = ds.AA + ds.BB
+        new_data_vars['Q'] = 2*ds.CR
+        new_data_vars['U'] = 2*ds.CI
+        new_data_vars['V'] = ds.AA - ds.BB
     new_attrs = ds.attrs.copy()
     new_attrs['pol_type'] = 'IQUV'
     return xr.Dataset(new_data_vars, ds.coords, new_attrs)
