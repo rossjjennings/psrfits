@@ -50,7 +50,7 @@ def pscrunch(ds):
     '''
     Return a dataset containing only the total intensity component of the input.
     '''
-    new_data_vars = ds.data_vars
+    new_data_vars = dict(ds.data_vars)
     for pol in get_pols(ds):
         del new_data_vars[pol]
     if ds.pol_type in ['AA+BB', 'IQUV']:
@@ -75,7 +75,7 @@ def to_stokes(ds):
         return pscrunch(ds)
     elif ds.pol_type != 'AABBCRCI':
         raise ValueError("Polarization type not recognized.")
-    new_data_vars = ds.data_vars
+    new_data_vars = dict(ds.data_vars)
     for pol in get_pols(ds):
         del new_data_vars[pol]
     if ds.fd_poln == 'LIN':
