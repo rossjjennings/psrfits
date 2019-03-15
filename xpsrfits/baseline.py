@@ -43,3 +43,12 @@ def rolling_sum(arr, size):
     n = len(arr)
     s = np.cumsum(arr)
     return np.array([s[(i+size)%n]-s[i]+(i+size)//n*s[-1] for i in range(n)])
+
+def offpulse_rms(profile, size):
+    '''
+    Calculate the off-pulse RMS of a profile (a measure of noise level).
+    This is the RMS of `profile` in the segment of length `size`
+    (in phase bins) minimizing the integral of `profile`.
+    '''
+    opw = offpulse_window(profile)
+    return np.sqrt(profile.isel(phase=opw).mean(dim='phase'))
