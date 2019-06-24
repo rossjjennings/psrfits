@@ -7,7 +7,7 @@ def pol_split(data, pol_type):
     Return the result as a dictionary of data variables suitable for 
     constructing an xarray Dataset.
     '''
-    if pol_type == 'AA+BB':
+    if pol_type in ['AA+BB', 'INTEN']:
         I, = np.transpose(data, (1, 0, 2, 3))
         data_vars = {'I': (['time', 'freq', 'phase'], I)}
     elif pol_type == 'AABB':
@@ -27,7 +27,7 @@ def pol_split(data, pol_type):
                      'U': (['time', 'freq', 'phase'], U),
                      'V': (['time', 'freq', 'phase'], V)}
     else:
-        raise ValueError("Polarization type not recognized.")
+        raise ValueError("Polarization type '{}' not recognized.".format(pol_type))
     
     return data_vars
 
@@ -35,7 +35,7 @@ def get_pols(ds):
     '''
     Return a list the polarizations present in the dataset `ds`.
     '''
-    if ds.pol_type == 'AA+BB':
+    if ds.pol_type in ['AA+BB', 'INTEN']:
         return ['I']
     elif ds.pol_type == 'AABB':
         return ['AA', 'BB']
@@ -44,7 +44,7 @@ def get_pols(ds):
     elif ds.pol_type == 'IQUV':
         return ['I', 'Q', 'U', 'V']
     else:
-        raise ValueError("Polarization type not recognized.")
+        raise ValueError("Polarization type '{}' not recognized.".format(ds.pol_type))
 
 def pscrunch(ds):
     '''
@@ -53,12 +53,12 @@ def pscrunch(ds):
     new_data_vars = dict(ds.data_vars)
     for pol in get_pols(ds):
         del new_data_vars[pol]
-    if ds.pol_type in ['AA+BB', 'IQUV']:
+    if ds.pol_type in ['AA+BB', 'INTEN', 'IQUV']:
         new_data_vars['I'] = ds.I
     elif ds.pol_type == ['AABB', 'AABBCRCI']:
         new_data_vars['I'] = ds.AA + ds.BB
     else:
-        raise ValueError("Polarization type not recognized.")
+        raise ValueError("Polarization type '{}' not recognized.".format(ds.pol_type))
     new_attrs = ds.attrs.copy()
     new_attrs['pol_type'] = 'AA+BB'
     return xr.Dataset(new_data_vars, ds.coords, new_attrs)
@@ -71,10 +71,10 @@ def to_stokes(ds):
     '''
     if ds.pol_type == 'IQUV':
         return ds
-    elif ds.pol_type == ['AABB', 'AA+BB']:
+    elif ds.pol_type in ['AABB', 'AA+BB', 'INTEN']:
         return pscrunch(ds)
     elif ds.pol_type != 'AABBCRCI':
-        raise ValueError("Polarization type not recognized.")
+        raise ValueError("Polarization type '{}' not recognized.".format(ds.pol_type))
     new_data_vars = dict(ds.data_vars)
     for pol in get_pols(ds):
         del new_data_vars[pol]
