@@ -55,7 +55,7 @@ def pscrunch(ds):
         del new_data_vars[pol]
     if ds.pol_type in ['AA+BB', 'INTEN', 'IQUV']:
         new_data_vars['I'] = ds.I
-    elif ds.pol_type == ['AABB', 'AABBCRCI']:
+    elif ds.pol_type in ['AABB', 'AABBCRCI']:
         new_data_vars['I'] = ds.AA + ds.BB
     else:
         raise ValueError("Polarization type '{}' not recognized.".format(ds.pol_type))
