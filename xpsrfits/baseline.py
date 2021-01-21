@@ -9,7 +9,7 @@ def remove_baseline(ds, method='median'):
     if method == 'offpulse':
         I = (ds.AA + ds.BB if ds.pol_type.startswith('AABB') else ds.I)
         size = ds.phase.size//8
-        profile = I.groupby('phase').mean()
+        profile = I.groupby('phase').mean(dim=...)
         opw = offpulse_window(profile, size)
     
     new_data_vars = dict(ds.data_vars)
