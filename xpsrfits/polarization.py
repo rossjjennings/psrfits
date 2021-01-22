@@ -78,12 +78,12 @@ def to_stokes(ds):
     new_data_vars = dict(ds.data_vars)
     for pol in get_pols(ds):
         del new_data_vars[pol]
-    if ds.fd_poln == 'LIN':
+    if ds.frontend.feed_poln == 'LIN':
         new_data_vars['I'] = ds.AA + ds.BB
         new_data_vars['Q'] =  ds.AA - ds.BB
         new_data_vars['U'] = 2*ds.CR
         new_data_vars['V'] = 2*ds.CI
-    elif ds.fd_poln == 'CIRC':
+    elif ds.frontend.feed_poln == 'CIRC':
         new_data_vars['I'] = ds.AA + ds.BB
         new_data_vars['Q'] = 2*ds.CR
         new_data_vars['U'] = 2*ds.CI

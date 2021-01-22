@@ -4,6 +4,13 @@ import warnings
 from astropy.io import fits
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, EarthLocation
+import astropy.units as u
+from xpsrfits.frontend import Frontend
+from xpsrfits.backend import Backend
+from xpsrfits.telescope import Telescope
+from xpsrfits.observation import Observation
+from xpsrfits.beam import Beam
+from xpsrfits.calibrator import Calibrator
 from xpsrfits.polarization import pol_split, pscrunch, to_stokes
 from xpsrfits.dispersion import dedisperse
 from xpsrfits.baseline import remove_baseline
@@ -51,20 +58,27 @@ def to_dataset(hdulist, weight=True):
     weights = native_byteorder(weights).reshape(coords['time'].size, coords['freq'].size)
     data_vars['duration'] = (['time'], duration)
     data_vars['weights'] = (['time', 'freq'], weights)
+    #location = EarthLocation.from_geocentric(
+    #    primary_hdu.header['ant_x']*u.m,
+    #    primary_hdu.header['ant_y']*u.m,
+    #    primary_hdu.header['ant_z']*u.m,
+    #)
     
-    if primary_hdu.header['obsfreq'] != history_hdu.data['ctr_freq'][-1]:
-        msg = 'Last CTR_FREQ in history does not match OBSFREQ (using history value)'
-        warnings.warn(msg, RuntimeWarning)
-    attrs = {'source': primary_hdu.header['src_name'],
-             'telescope': primary_hdu.header['telescop'],
-             'frontend': primary_hdu.header['frontend'],
-             'backend': primary_hdu.header['backend'],
-             'observer': primary_hdu.header['observer'],
-             'center_freq': history_hdu.data['ctr_freq'][-1],
-             'DM': subint_hdu.header['DM'],
-             'pol_type': subint_hdu.header['pol_type'],
-             'fd_poln': primary_hdu.header['fd_poln'],
-             'start_sec': primary_hdu.header['stt_smjd']}
+    attrs = {
+        'source': primary_hdu.header['src_name'],
+        'observation': Observation.from_header(primary_hdu.header),
+        'telescope': Telescope.from_header(primary_hdu.header),
+        'frontend': Frontend.from_header(primary_hdu.header),
+        'backend': Backend.from_header(primary_hdu.header),
+        'beam': Beam.from_header(primary_hdu.header),
+        'calibrator': Calibrator.from_header(primary_hdu.header),
+        'frequency': primary_hdu.header['obsfreq'],
+        'bandwidth': primary_hdu.header['obsbw'],
+        'center_freq': history_hdu.data['ctr_freq'][-1],
+        'DM': subint_hdu.header['DM'],
+        'pol_type': subint_hdu.header['pol_type'],
+        'start_sec': primary_hdu.header['stt_smjd'],
+    }
     
     ds = xr.Dataset(data_vars, coords, attrs)
     
