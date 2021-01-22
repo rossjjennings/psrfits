@@ -64,6 +64,9 @@ def to_dataset(hdulist, weight=True):
     #    primary_hdu.header['ant_z']*u.m,
     #)
     
+    start_time = Time(primary_hdu.header['stt_imjd'], format='mjd')
+    start_time += primary_hdu.header['stt_smjd']*u.s
+    start_time += primary_hdu.header['stt_offs']*u.s
     attrs = {
         'source': primary_hdu.header['src_name'],
         'observation': Observation.from_header(primary_hdu.header),
@@ -77,7 +80,7 @@ def to_dataset(hdulist, weight=True):
         'center_freq': history_hdu.data['ctr_freq'][-1],
         'DM': subint_hdu.header['DM'],
         'pol_type': subint_hdu.header['pol_type'],
-        'start_sec': primary_hdu.header['stt_smjd'],
+        'start_time': start_time,
     }
     
     ds = xr.Dataset(data_vars, coords, attrs)
