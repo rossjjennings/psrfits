@@ -5,6 +5,8 @@ from astropy.io import fits
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, EarthLocation
 import astropy.units as u
+from pint.models import get_model
+import tempfile
 from xpsrfits.frontend import Frontend
 from xpsrfits.backend import Backend
 from xpsrfits.telescope import Telescope
@@ -67,6 +69,9 @@ def to_dataset(hdulist, weight=True):
     start_time = Time(primary_hdu.header['stt_imjd'], format='mjd')
     start_time += primary_hdu.header['stt_smjd']*u.s
     start_time += primary_hdu.header['stt_offs']*u.s
+    
+    model = '\n'.join(line[0] for line in hdulist['psrparam'].data)
+    
     attrs = {
         'source': primary_hdu.header['src_name'],
         'observation': Observation.from_header(primary_hdu.header),
@@ -75,6 +80,7 @@ def to_dataset(hdulist, weight=True):
         'backend': Backend.from_header(primary_hdu.header),
         'beam': Beam.from_header(primary_hdu.header),
         'calibrator': Calibrator.from_header(primary_hdu.header),
+        'model': model,
         'frequency': primary_hdu.header['obsfreq'],
         'bandwidth': primary_hdu.header['obsbw'],
         'center_freq': history_hdu.data['ctr_freq'][-1],
@@ -153,3 +159,10 @@ def native_byteorder(arr):
         return arr.byteswap().newbyteorder()
     else:
         return arr
+
+def get_pint_model(ds):
+    with tempfile.NamedTemporaryFile('w+') as tp:
+        tp.write(ds.model)
+        tp.flush()
+        model = get_model(tp.name)
+    return model
