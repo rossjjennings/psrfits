@@ -1,21 +1,26 @@
 from textwrap import dedent
+from astropy.coordinates import EarthLocation
+import astropy.units as u
 
 class Telescope:
-    __slots__ = 'name', 'ant_x', 'ant_y', 'ant_z'
+    __slots__ = 'name', 'location'
     
-    def __init__(self, name, ant_x, ant_y, ant_z):
+    def __init__(self, name, location):
         self.name = name
-        self.ant_x = ant_x
-        self.ant_y = ant_y
-        self.ant_z = ant_z
+        self.location = location
     
     @classmethod
     def from_header(cls, header):
+        try:
+            ant_x = float(header['ant_x'])
+            ant_y = float(header['ant_y'])
+            ant_z = float(header['ant_z'])
+            location = EarthLocation.from_geocentric(ant_x*u.m, ant_y*u.m, ant_z*u.m)
+        except ValueError:
+            location = None
         return cls(
-            header['telescop'],
-            header['ant_x'],
-            header['ant_y'],
-            header['ant_z'],
+            name = header['telescop'],
+            location = location,
         )
     
     def __str__(self):
@@ -24,9 +29,7 @@ class Telescope:
     def __repr__(self):
         description = f'''
         <xpsrfits.Telescope>
-            name = {self.name}
-            ant_x = {self.ant_x}
-            ant_y = {self.ant_y}
-            ant_z = {self.ant_z}
+            name: {self.name}
+            location: {self.location}
         '''
         return dedent(description)[1:]
