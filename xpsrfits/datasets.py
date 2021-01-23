@@ -7,13 +7,7 @@ from astropy.coordinates import SkyCoord, EarthLocation
 import astropy.units as u
 from pint.models import get_model
 import tempfile
-from xpsrfits.source import Source
-from xpsrfits.frontend import Frontend
-from xpsrfits.backend import Backend
-from xpsrfits.telescope import Telescope
-from xpsrfits.observation import Observation
-from xpsrfits.beam import Beam
-from xpsrfits.calibrator import Calibrator
+from xpsrfits.attrs import *
 from xpsrfits.polarization import pol_split, pscrunch, to_stokes
 from xpsrfits.dispersion import dedisperse
 from xpsrfits.baseline import remove_baseline

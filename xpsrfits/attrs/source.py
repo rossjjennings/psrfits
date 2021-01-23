@@ -14,7 +14,7 @@ class Source:
         polyco = None
         predictor = None
         if 'polyco' in hdulist:
-            polyco = hdul['polyco'].data
+            polyco = hdulist['polyco'].data
         if 't2predict' in hdulist:
             predictor = '\n'.join(line[0] for line in hdulist['t2predict'].data)
         return cls(name, model, polyco, predictor)
