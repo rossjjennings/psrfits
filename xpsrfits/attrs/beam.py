@@ -21,7 +21,10 @@ class Beam:
         )
     
     def __str__(self):
-        return f'{self.beam_id} [...]'.strip()
+        if self.beam_id is None or self.beam_id == '':
+            return '<Beam>'
+        else:
+            return f'<Beam {self.beam_id}>'
     
     def __repr__(self):
         description = f'''

@@ -21,7 +21,10 @@ class Calibrator:
         )
     
     def __str__(self):
-        return f'{self.mode} [...]'.strip()
+        if self.mode is None or self.mode == '':
+            return '<Calibrator>'
+        else:
+            return f'<{self.mode} mode calibrator>'
     
     def __repr__(self):
         description = f'''

@@ -102,7 +102,7 @@ class Observation:
         )
     
     def __str__(self):
-        return f'{self.mode} mode observation [...]'
+        return f'<{self.mode} mode observation>'
     
     def __repr__(self):
         description = f'''

@@ -24,7 +24,7 @@ class Telescope:
         )
     
     def __str__(self):
-        return f'{self.name} [...]'
+        return f'<{self.name}>'
     
     def __repr__(self):
         description = f'''
