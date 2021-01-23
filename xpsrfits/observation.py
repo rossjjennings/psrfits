@@ -111,12 +111,21 @@ class Observation:
             observer:     {self.observer}
             mode:         {self.mode}
             project_id:   {self.project_id}
-            coords:       {self.coords}
+            coords:       {fmt_skycoord(self.coords)}
             track_mode:   {self.track_mode}
-            start_coords: {self.start_coords}
-            stop_coords:  {self.stop_coords}
+            start_coords: {fmt_skycoord(self.start_coords)}
+            stop_coords:  {fmt_skycoord(self.stop_coords)}
             scan_length:  {self.scan_length}
             feed_mode:    {self.feed_mode}
             feed_angle:   {self.feed_angle}
         '''
         return dedent(description).strip('\n')
+
+def fmt_skycoord(skycoord):
+    class_name = skycoord.__class__.__name__
+    frame_name = skycoord.frame.__class__.__name__
+    component_names = list(skycoord.representation_component_names)
+    if 'distance' in component_names and skycoord.distance == 1.0:
+        component_names.remove('distance')
+    values = ', '.join(f'{name}={getattr(skycoord, name):g}' for name in component_names)
+    return f'<{class_name} ({frame_name}): {values}>'
