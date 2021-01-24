@@ -11,12 +11,13 @@ class AttrCollection:
         max_len = max(len(name) for name in self.__slots__)
         description = ""
         for name in self.__slots__:
-            key = f"{name}:"
-            description += f"{key:<{max_len + 2}}{self._fmt_item(name)}\n"
+            item = getattr(self, name)
+            if item is not None:
+                key = f"{name}:"
+                description += f"{key:<{max_len + 2}}{self._fmt_item(item)}\n"
         return description
     
-    def _fmt_item(self, name):
-        item = getattr(self, name)
+    def _fmt_item(self, item):
         if isinstance(item, SkyCoord):
             item_str = fmt_skycoord(item)
         else:
