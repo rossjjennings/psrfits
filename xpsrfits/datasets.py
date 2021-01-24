@@ -65,6 +65,7 @@ def to_dataset(hdulist, weight=True):
         'backend': Backend.from_header(primary_hdu.header),
         'beam': Beam.from_header(primary_hdu.header),
         'calibrator': Calibrator.from_header(primary_hdu.header),
+        'history': History.from_hdu(history_hdu),
         'frequency': primary_hdu.header['obsfreq'],
         'bandwidth': primary_hdu.header['obsbw'],
         'center_freq': history_hdu.data['ctr_freq'][-1],

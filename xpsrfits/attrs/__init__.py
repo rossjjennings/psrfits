@@ -5,3 +5,4 @@ from .telescope import Telescope
 from .observation import Observation
 from .beam import Beam
 from .calibrator import Calibrator
+from .history import History
