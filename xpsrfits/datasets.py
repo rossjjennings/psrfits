@@ -78,7 +78,7 @@ def to_dataset(hdulist, weight=True):
         'epoch_type': subint_hdu.header['epochs'],
         'time_var': subint_hdu.header['int_type'],
         'flux_unit': subint_hdu.header['scale'],
-        'tbin': history_hdu.data['tbin'][-1],
+        'time_per_bin': history_hdu.data['tbin'][-1],
     }
     
     ds = xr.Dataset(data_vars, coords, attrs)
