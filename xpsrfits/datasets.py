@@ -127,8 +127,8 @@ def get_coords(hdulist):
     freq = np.atleast_1d(native_byteorder(dat_freq[0]))
     # All other rows should be the same
     if not all(np.all(row == freq) for row in dat_freq):
-        msg = 'At MJD {}: Not all frequencies match'
-        warnings.warn(msg.format(mjd), RuntimeWarning)
+        msg = 'Not all frequencies match'
+        warnings.warn(msg, RuntimeWarning)
     
     # At least for NANOGrav data, the TBIN in SUBINT is wrong.
     phase = np.arange(history_hdu.data['nbin'][-1])*history_hdu.data['tbin'][-1]
