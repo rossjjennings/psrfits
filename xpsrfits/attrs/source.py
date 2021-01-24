@@ -1,6 +1,7 @@
 from textwrap import indent
 
 from .attrcollection import AttrCollection
+from .polyco import Polyco
 
 class Source(AttrCollection):
     __slots__ = 'name', 'model', 'polyco', 'predictor'
@@ -10,7 +11,7 @@ class Source(AttrCollection):
         polyco = None
         predictor = None
         if 'polyco' in hdulist:
-            polyco = hdulist['polyco'].data
+            polyco = Polyco(hdulist['polyco'].data)
         if 't2predict' in hdulist:
             predictor = '\n'.join(line[0] for line in hdulist['t2predict'].data)
         return cls(
