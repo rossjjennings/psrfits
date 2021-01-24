@@ -41,7 +41,7 @@ def dedisperse(ds, DM=None, weight_center_freq=False):
         center_freq = ds.center_freq
     time_delays = K*DM*(center_freq**-2 - ds.freq.values**-2)
     
-    tbin = ds.phase.values[1]/1000 # convert from ms to sec
+    tbin = ds.tbin
     bin_delays = time_delays/tbin
     
     new_data_vars = dict(ds.data_vars)
