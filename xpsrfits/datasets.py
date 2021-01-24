@@ -128,9 +128,16 @@ def get_coords(hdulist):
         msg = 'Not all frequencies match'
         warnings.warn(msg, RuntimeWarning)
     
-    # At least for NANOGrav data, the TBIN in SUBINT is wrong.
-    phase = np.arange(history_hdu.data['nbin'][-1])*history_hdu.data['tbin'][-1]
-    phase = phase*1000 # s -> ms
+    nbin = history_hdu.data['nbin'][-1]
+    try:
+        nbin_prd = int(history_hdu.data['nbin_prd'][-1])
+    except ValueError:
+        nbin_prd = nbin
+    try:
+        phs_offs = float(subint_hdu.header['phs_offs'])
+    except ValueError:
+        phs_offs = 0.
+    phase = np.linspace(0., nbin/nbin_prd, nbin, endpoint=False) + phs_offs
     
     coords = {'time': time, 'freq': freq, 'phase': phase}
     
