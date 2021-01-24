@@ -40,8 +40,6 @@ def to_dataset(hdulist, weight=True):
     '''
     primary_hdu = hdulist['primary']
     history_hdu = hdulist['history']
-    #psrparam_hdu = hdulist['psrparam']
-    #polyco_hdu = hdulist['polyco']
     subint_hdu = hdulist['subint']
     
     data = get_data(subint_hdu, weight)
@@ -55,11 +53,6 @@ def to_dataset(hdulist, weight=True):
     weights = native_byteorder(weights).reshape(coords['time'].size, coords['freq'].size)
     data_vars['duration'] = (['time'], duration)
     data_vars['weights'] = (['time', 'freq'], weights)
-    #location = EarthLocation.from_geocentric(
-    #    primary_hdu.header['ant_x']*u.m,
-    #    primary_hdu.header['ant_y']*u.m,
-    #    primary_hdu.header['ant_z']*u.m,
-    #)
     
     start_time = Time(primary_hdu.header['stt_imjd'], format='mjd')
     start_time += primary_hdu.header['stt_smjd']*u.s
