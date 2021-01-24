@@ -1,14 +1,11 @@
-from textwrap import dedent
+from textwrap import indent
 
 class Beam:
     __slots__ = 'beam_id', 'center_id', 'major_axis', 'minor_axis', 'pos_angle'
     
-    def __init__(self, beam_id, center_id, major_axis, minor_axis, pos_angle):
-        self.beam_id = beam_id
-        self.center_id = center_id
-        self.major_axis = major_axis
-        self.minor_axis = minor_axis
-        self.pos_angle = pos_angle
+    def __init__(self, **kwargs):
+        for name in self.__slots__:
+            setattr(self, name, kwargs[name])
     
     @classmethod
     def from_header(cls, header):
@@ -20,6 +17,14 @@ class Beam:
             pos_angle = header['bpa'],
         )
     
+    def _repr_items(self):
+        max_len = max(len(name) for name in self.__slots__)
+        description = ""
+        for name in self.__slots__:
+            key = f"{name}:"
+            description += f"{key:<{max_len + 2}}{getattr(self, name)}\n"
+        return description
+    
     def __str__(self):
         if self.beam_id is None or self.beam_id == '':
             return '<Beam>'
@@ -27,12 +32,6 @@ class Beam:
             return f'<Beam {self.beam_id}>'
     
     def __repr__(self):
-        description = f'''
-        <xpsrfits.Beam>
-            beam_id:    {self.beam_id}
-            center_id:  {self.center_id}
-            major_axis: {self.major_axis}
-            minor_axis: {self.minor_axis}
-            pos_angle:  {self.pos_angle}
-        '''
-        return dedent(description).strip('\n')
+        description = "<xpsrfits.Beam>\n"
+        description += indent(self._repr_items(), '    ')
+        return description

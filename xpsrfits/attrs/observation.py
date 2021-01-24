@@ -1,4 +1,4 @@
-from textwrap import dedent
+from textwrap import indent
 from astropy.time import Time
 from astropy.coordinates import SkyCoord
 import astropy.units as u
@@ -8,18 +8,9 @@ import warnings
 class Observation:
     __slots__ = 'date', 'observer', 'mode', 'project_id', 'coords', 'track_mode', 'start_coords', 'stop_coords', 'scan_length', 'feed_mode', 'feed_angle'
     
-    def __init__(self, date, observer, mode, project_id, coords, track_mode, start_coords, stop_coords, scan_length, feed_mode, feed_angle):
-        self.date = date
-        self.observer = observer
-        self.mode = mode
-        self.project_id = project_id
-        self.coords = coords
-        self.track_mode = track_mode
-        self.start_coords = start_coords
-        self.stop_coords = stop_coords
-        self.scan_length = scan_length
-        self.feed_mode = feed_mode
-        self.feed_angle = feed_angle
+    def __init__(self, **kwargs):
+        for name in self.__slots__:
+            setattr(self, name, kwargs[name])
     
     @classmethod
     def from_header(cls, header):
@@ -101,25 +92,21 @@ class Observation:
             feed_angle = header['fa_req'],
         )
     
+    def _repr_items(self):
+        max_len = max(len(name) for name in self.__slots__)
+        description = ""
+        for name in self.__slots__:
+            key = f"{name}:"
+            description += f"{key:<{max_len + 2}}{getattr(self, name)}\n"
+        return description
+    
     def __str__(self):
         return f'<{self.mode} mode observation>'
     
     def __repr__(self):
-        description = f'''
-        <xpsrfits.Observation>
-            date:         {self.date}
-            observer:     {self.observer}
-            mode:         {self.mode}
-            project_id:   {self.project_id}
-            coords:       {fmt_skycoord(self.coords)}
-            track_mode:   {self.track_mode}
-            start_coords: {fmt_skycoord(self.start_coords)}
-            stop_coords:  {fmt_skycoord(self.stop_coords)}
-            scan_length:  {self.scan_length}
-            feed_mode:    {self.feed_mode}
-            feed_angle:   {self.feed_angle}
-        '''
-        return dedent(description).strip('\n')
+        description = "<xpsrfits.Observation>\n"
+        description += indent(self._repr_items(), '    ')
+        return description
 
 def fmt_skycoord(skycoord):
     class_name = skycoord.__class__.__name__

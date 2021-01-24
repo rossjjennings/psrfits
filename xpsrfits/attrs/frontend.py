@@ -1,15 +1,11 @@
-from textwrap import dedent
+from textwrap import indent
 
 class Frontend:
     __slots__ = 'name', 'n_pol', 'feed_poln', 'handedness', 's_angle', 'xy_phase'
     
-    def __init__(self, name, n_pol, feed_poln, handedness, s_angle, xy_phase):
-        self.name = name
-        self.n_pol = n_pol
-        self.feed_poln = feed_poln
-        self.handedness = handedness
-        self.s_angle = s_angle
-        self.xy_phase = xy_phase
+    def __init__(self, **kwargs):
+        for name in self.__slots__:
+            setattr(self, name, kwargs[name])
     
     @classmethod
     def from_header(cls, header):
@@ -22,17 +18,18 @@ class Frontend:
             xy_phase = header['fd_xyph'],
         )
     
+    def _repr_items(self):
+        max_len = max(len(name) for name in self.__slots__)
+        description = ""
+        for name in self.__slots__:
+            key = f"{name}:"
+            description += f"{key:<{max_len + 2}}{getattr(self, name)}\n"
+        return description
+    
     def __str__(self):
         return f'<{self.name}>'
     
     def __repr__(self):
-        description = f'''
-        <xpsrfits.Frontend>
-            name:       {self.name}
-            n_pol:      {self.n_pol}
-            feed_poln:  {self.feed_poln}
-            handedness: {self.handedness}
-            s_angle:    {self.s_angle}
-            xy_phase:   {self.xy_phase}
-        '''
-        return dedent(description).strip('\n')
+        description = "<xpsrfits.Frontend>\n"
+        description += indent(self._repr_items(), '    ')
+        return description

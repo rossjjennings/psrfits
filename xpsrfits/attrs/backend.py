@@ -1,15 +1,11 @@
-from textwrap import dedent
+from textwrap import indent
 
 class Backend:
     __slots__ = 'name', 'config', 'phase', 'dcc', 'delay', 'cycle_time'
     
-    def __init__(self, name, config, phase, dcc, delay, cycle_time):
-        self.name = name
-        self.config = config
-        self.phase = phase
-        self.dcc = dcc
-        self.delay = delay
-        self.cycle_time = cycle_time
+    def __init__(self, **kwargs):
+        for name in self.__slots__:
+            setattr(self, name, kwargs[name])
     
     @classmethod
     def from_header(cls, header):
@@ -22,17 +18,18 @@ class Backend:
             cycle_time = header['tcycle'],
         )
     
+    def _repr_items(self):
+        max_len = max(len(name) for name in self.__slots__)
+        description = ""
+        for name in self.__slots__:
+            key = f"{name}:"
+            description += f"{key:<{max_len + 2}}{getattr(self, name)}\n"
+        return description
+    
     def __str__(self):
         return f'<{self.name}>'
     
     def __repr__(self):
-        description = f'''
-        <xpsrfits.Backend>
-            name:       {self.name}
-            config:     {self.config}
-            phase:      {self.phase}
-            dcc:        {self.dcc}
-            delay:      {self.delay}
-            cycle_time: {self.cycle_time}
-        '''
-        return dedent(description).strip('\n')
+        description = "<xpsrfits.Backend>\n"
+        description += indent(self._repr_items(), '    ')
+        return description

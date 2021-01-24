@@ -1,14 +1,11 @@
-from textwrap import dedent
+from textwrap import indent
 
 class Calibrator:
     __slots__ = 'mode', 'freq', 'duty_cycle', 'phase', 'n_phase'
     
-    def __init__(self, mode, freq, duty_cycle, phase, n_phase):
-        self.mode = mode
-        self.freq = freq
-        self.duty_cycle = duty_cycle
-        self.phase = phase
-        self.n_phase = n_phase
+    def __init__(self, **kwargs):
+        for name in self.__slots__:
+            setattr(self, name, kwargs[name])
     
     @classmethod
     def from_header(cls, header):
@@ -20,6 +17,14 @@ class Calibrator:
             n_phase = header['cal_nphs'],
         )
     
+    def _repr_items(self):
+        max_len = max(len(name) for name in self.__slots__)
+        description = ""
+        for name in self.__slots__:
+            key = f"{name}:"
+            description += f"{key:<{max_len + 2}}{getattr(self, name)}\n"
+        return description
+    
     def __str__(self):
         if self.mode is None or self.mode == '':
             return '<Calibrator>'
@@ -27,12 +32,7 @@ class Calibrator:
             return f'<{self.mode} mode calibrator>'
     
     def __repr__(self):
-        description = f'''
-        <xpsrfits.Calibrator>
-            mode:       {self.mode}
-            freq:       {self.freq}
-            duty_cycle: {self.duty_cycle}
-            phase:      {self.phase}
-            n_phase:    {self.n_phase}
-        '''
-        return dedent(description).strip('\n')
+        description = "<xpsrfits.Calibrator>\n"
+        description += indent(self._repr_items(), '    ')
+        return description
+

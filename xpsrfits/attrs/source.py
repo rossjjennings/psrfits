@@ -1,4 +1,4 @@
-from textwrap import dedent
+from textwrap import indent
 
 class Source:
     def __init__(self, name, model, polyco=None, predictor=None):
@@ -19,11 +19,8 @@ class Source:
             predictor = '\n'.join(line[0] for line in hdulist['t2predict'].data)
         return cls(name, model, polyco, predictor)
     
-    def __str__(self):
-        return f'<{self.name}>'
-    
-    def __repr__(self):
-        description = "<xpsrfits.Source>\n"
+    def _repr_items(self):
+        description = ""
         included_names = ["name", "model"]
         if self.polyco is not None:
             included_names.append("polyco")
@@ -32,7 +29,15 @@ class Source:
         max_len = max(len(name) for name in included_names)
         for name in included_names:
             key = f"{name}:"
-            description += f"    {key:<{max_len + 2}}{self._fmt_prop(name)}\n"
+            description += f"{key:<{max_len + 2}}{self._fmt_prop(name)}\n"
+        return description
+    
+    def __str__(self):
+        return f'<{self.name}>'
+    
+    def __repr__(self):
+        description = "<xpsrfits.Source>\n"
+        description += indent(self._repr_items(), '    ')
         return description
     
     def _fmt_prop(self, name):
