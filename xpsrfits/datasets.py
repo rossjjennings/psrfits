@@ -76,9 +76,14 @@ def to_dataset(hdulist, weight=True):
         'frequency': primary_hdu.header['obsfreq'],
         'bandwidth': primary_hdu.header['obsbw'],
         'center_freq': history_hdu.data['ctr_freq'][-1],
+        'channel_offset': subint_hdu.header['nchnoffs'],
         'DM': subint_hdu.header['DM'],
+        'RM': subint_hdu.header['RM'],
         'pol_type': subint_hdu.header['pol_type'],
         'start_time': start_time,
+        'epoch_type': subint_hdu.header['epochs'],
+        'time_var': subint_hdu.header['int_type'],
+        'flux_unit': subint_hdu.header['scale'],
     }
     
     ds = xr.Dataset(data_vars, coords, attrs)
