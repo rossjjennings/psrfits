@@ -2,12 +2,10 @@ from textwrap import indent
 from astropy.coordinates import EarthLocation
 import astropy.units as u
 
-class Telescope:
+from .attrcollection import AttrCollection
+
+class Telescope(AttrCollection):
     __slots__ = 'name', 'location'
-    
-    def __init__(self, **kwargs):
-        for name in self.__slots__:
-            setattr(self, name, kwargs[name])
     
     @classmethod
     def from_header(cls, header):
@@ -22,14 +20,6 @@ class Telescope:
             name = header['telescop'],
             location = location,
         )
-    
-    def _repr_items(self):
-        max_len = max(len(name) for name in self.__slots__)
-        description = ""
-        for name in self.__slots__:
-            key = f"{name}:"
-            description += f"{key:<{max_len + 2}}{getattr(self, name)}\n"
-        return description
     
     def __str__(self):
         return f'<{self.name}>'

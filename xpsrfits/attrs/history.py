@@ -2,6 +2,8 @@ from textwrap import indent, dedent
 from datetime import datetime
 from astropy.time import Time
 
+from .attrcollection import AttrCollection
+
 class History:
     def __init__(self, entries):
         self.entries = HistoryEntry.from_table(entries)
@@ -18,7 +20,7 @@ class History:
         description += indent(self.entries[-1]._repr_items(), '    ')
         return description
 
-class HistoryEntry:
+class HistoryEntry(AttrCollection):
     __slots__ = (
         'date',
         'command',
@@ -49,10 +51,6 @@ class HistoryEntry:
         'dm_model',
         'aux_dm_corrected',
     )
-    
-    def __init__(self, **kwargs):
-        for name in self.__slots__:
-            setattr(self, name, kwargs[name])
     
     @classmethod
     def from_table(cls, table):
@@ -88,14 +86,6 @@ class HistoryEntry:
             entries[i]['dm_model'] = table['dm_model'][i]
             entries[i]['aux_dm_corrected'] = bool(table['aux_dm_c'][i])
         return [cls(**entry) for entry in entries]
-    
-    def _repr_items(self):
-        max_len = max(len(name) for name in self.__slots__)
-        description = ""
-        for name in self.__slots__:
-            key = f"{name}:"
-            description += f"{key:<{max_len + 2}}{getattr(self, name)}\n"
-        return description
     
     def __str__(self):
         return f"<HistoryEntry from {self.date}>"

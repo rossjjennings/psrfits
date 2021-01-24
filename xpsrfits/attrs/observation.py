@@ -5,12 +5,10 @@ import astropy.units as u
 from pint import PulsarEcliptic
 import warnings
 
-class Observation:
+from .attrcollection import AttrCollection
+
+class Observation(AttrCollection):
     __slots__ = 'date', 'observer', 'mode', 'project_id', 'coords', 'track_mode', 'start_coords', 'stop_coords', 'scan_length', 'feed_mode', 'feed_angle'
-    
-    def __init__(self, **kwargs):
-        for name in self.__slots__:
-            setattr(self, name, kwargs[name])
     
     @classmethod
     def from_header(cls, header):
@@ -92,14 +90,6 @@ class Observation:
             feed_angle = header['fa_req'],
         )
     
-    def _repr_items(self):
-        max_len = max(len(name) for name in self.__slots__)
-        description = ""
-        for name in self.__slots__:
-            key = f"{name}:"
-            description += f"{key:<{max_len + 2}}{getattr(self, name)}\n"
-        return description
-    
     def __str__(self):
         return f'<{self.mode} mode observation>'
     
@@ -107,12 +97,3 @@ class Observation:
         description = "<xpsrfits.Observation>\n"
         description += indent(self._repr_items(), '    ')
         return description
-
-def fmt_skycoord(skycoord):
-    class_name = skycoord.__class__.__name__
-    frame_name = skycoord.frame.__class__.__name__
-    component_names = list(skycoord.representation_component_names)
-    if 'distance' in component_names and skycoord.distance == 1.0:
-        component_names.remove('distance')
-    values = ', '.join(f'{name}={getattr(skycoord, name):g}' for name in component_names)
-    return f'<{class_name} ({frame_name}): {values}>'
