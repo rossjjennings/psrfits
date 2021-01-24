@@ -19,6 +19,19 @@ class History:
         description = "<xpsrfits.History>\nLatest entry:\n"
         description += indent(self.entries[-1]._repr_items(), '    ')
         return description
+    
+    def __getattr__(self, name):
+        return getattr(self.entries[-1], name)
+    
+    def __getitem__(self, key):
+        return self.entries[key]
+    
+    def __len__(self):
+        return len(self.entries)
+    
+    def __iter__(self):
+        for entry in self.entries:
+            yield entry
 
 class HistoryEntry(AttrCollection):
     __slots__ = (
