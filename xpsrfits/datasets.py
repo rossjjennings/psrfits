@@ -49,8 +49,7 @@ def to_dataset(hdulist, weight=True):
     # Add data vars
     duration = subint_hdu.data['tsubint']
     weights = subint_hdu.data['dat_wts']
-    duration = native_byteorder(duration)
-    weights = native_byteorder(weights).reshape(coords['time'].size, coords['freq'].size)
+    weights = weights.reshape(coords['time'].size, coords['freq'].size)
     data_vars['duration'] = (['time'], duration)
     data_vars['weights'] = (['time', 'freq'], weights)
     
@@ -123,7 +122,7 @@ def get_coords(hdulist):
     time = subint_hdu.data['offs_sub']
     
     dat_freq = subint_hdu.data['dat_freq']
-    freq = np.atleast_1d(native_byteorder(dat_freq[0]))
+    freq = np.atleast_1d(dat_freq[0])
     # All other rows should be the same
     if not all(np.all(row == freq) for row in dat_freq):
         msg = 'Not all frequencies match'
