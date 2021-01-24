@@ -1,6 +1,6 @@
 from textwrap import indent
 
-from .attrcollection import AttrCollection
+from .attrcollection import AttrCollection, maybe_missing
 
 class Calibrator(AttrCollection):
     __slots__ = 'mode', 'freq', 'duty_cycle', 'phase', 'n_phase'
@@ -8,11 +8,11 @@ class Calibrator(AttrCollection):
     @classmethod
     def from_header(cls, header):
         return cls(
-            mode = header['cal_mode'],
-            freq = header['cal_freq'],
-            duty_cycle = header['cal_dcyc'],
-            phase = header['cal_phs'],
-            n_phase = header['cal_nphs'],
+            mode = maybe_missing(header['cal_mode']), # ''
+            freq = maybe_missing(header['cal_freq']), # *
+            duty_cycle = maybe_missing(header['cal_dcyc']), # *
+            phase = maybe_missing(header['cal_phs']), # *
+            n_phase = maybe_missing(header['cal_nphs']), # *
         )
     
     def __str__(self):

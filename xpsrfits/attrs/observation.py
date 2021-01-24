@@ -5,10 +5,22 @@ import astropy.units as u
 from pint import PulsarEcliptic
 import warnings
 
-from .attrcollection import AttrCollection
+from .attrcollection import AttrCollection, maybe_missing
 
 class Observation(AttrCollection):
-    __slots__ = 'date', 'observer', 'mode', 'project_id', 'coords', 'track_mode', 'start_coords', 'stop_coords', 'scan_length', 'feed_mode', 'feed_angle'
+    __slots__ = (
+        'date',
+        'observer',
+        'mode',
+        'project_id',
+        'coords',
+        'track_mode',
+        'start_coords',
+        'stop_coords',
+        'scan_length',
+        'feed_mode',
+        'feed_angle'
+    )
     
     @classmethod
     def from_header(cls, header):
@@ -85,7 +97,7 @@ class Observation(AttrCollection):
             track_mode = header['trk_mode'],
             start_coords = stop_coords,
             stop_coords = stop_coords,
-            scan_length = header['scanlen'],
+            scan_length = maybe_missing(header['scanlen']), #*
             feed_mode = header['fd_mode'],
             feed_angle = header['fa_req'],
         )

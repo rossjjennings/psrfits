@@ -36,3 +36,9 @@ def fmt_skycoord(skycoord):
         component_names.remove('distance')
     values = ', '.join(f'{name}={getattr(skycoord, name):g}' for name in component_names)
     return f'<{class_name} ({frame_name}): {values}>'
+
+def maybe_missing(item):
+    if item in ['', '*', 'N/A', 'UNSET', 'UNKNOWN', 'NONE']:
+        return None
+    else:
+        return item

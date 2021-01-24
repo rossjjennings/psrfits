@@ -1,6 +1,6 @@
 from textwrap import indent
 
-from .attrcollection import AttrCollection
+from .attrcollection import AttrCollection, maybe_missing
 
 class Backend(AttrCollection):
     __slots__ = 'name', 'config', 'phase', 'dcc', 'delay', 'cycle_time'
@@ -9,7 +9,7 @@ class Backend(AttrCollection):
     def from_header(cls, header):
         return cls(
             name = header['backend'],
-            config = header['beconfig'],
+            config = maybe_missing(header['beconfig']), # N/A
             phase = header['be_phase'],
             dcc = header['be_dcc'],
             delay = header['be_delay'],

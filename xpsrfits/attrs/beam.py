@@ -1,6 +1,6 @@
 from textwrap import indent
 
-from .attrcollection import AttrCollection
+from .attrcollection import AttrCollection, maybe_missing
 
 class Beam(AttrCollection):
     __slots__ = 'beam_id', 'center_id', 'major_axis', 'minor_axis', 'pos_angle'
@@ -8,8 +8,8 @@ class Beam(AttrCollection):
     @classmethod
     def from_header(cls, header):
         return cls(
-            beam_id = header['ibeam'],
-            center_id = header['pnt_id'],
+            beam_id = maybe_missing(header['ibeam']), # ''
+            center_id = maybe_missing(header['pnt_id']), # ''
             major_axis = header['bmaj'],
             minor_axis = header['bmin'],
             pos_angle = header['bpa'],

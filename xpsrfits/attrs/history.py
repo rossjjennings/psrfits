@@ -2,7 +2,7 @@ from textwrap import indent, dedent
 from datetime import datetime
 from astropy.time import Time
 
-from .attrcollection import AttrCollection
+from .attrcollection import AttrCollection, maybe_missing
 
 class History:
     def __init__(self, entries):
@@ -71,7 +71,7 @@ class HistoryEntry(AttrCollection):
         for i in range(table.size):
             timestamp = datetime.strptime(table['date_pro'][i], '%a %b %d %H:%M:%S %Y')
             entries[i]['date'] = Time(timestamp)
-            entries[i]['command'] = table['proc_cmd'][i]
+            entries[i]['command'] = maybe_missing(table['proc_cmd'][i]) # UNKNOWN
             entries[i]['flux_unit'] = table['scale'][i]
             entries[i]['pol_type'] = table['pol_type'][i]
             entries[i]['n_subints'] = table['nsub'][i]
@@ -89,14 +89,14 @@ class HistoryEntry(AttrCollection):
             entries[i]['backend_corrected'] = bool(table['be_corr'][i])
             entries[i]['rm_corrected'] = bool(table['rm_corr'][i])
             entries[i]['dedispersed'] = bool(table['dedisp'][i])
-            entries[i]['dedisp_method'] = table['dds_mthd'][i]
-            entries[i]['scatter_method'] = table['sc_mthd'][i]
-            entries[i]['cal_method'] = table['cal_mthd'][i]
-            entries[i]['cal_file'] = table['cal_file'][i]
-            entries[i]['rfi_method'] = table['rfi_mthd'][i]
-            entries[i]['rm_model'] = table['rm_model'][i]
+            entries[i]['dedisp_method'] = maybe_missing(table['dds_mthd'][i]) # UNSET
+            entries[i]['scatter_method'] = maybe_missing(table['sc_mthd'][i]) # NONE
+            entries[i]['cal_method'] = maybe_missing(table['cal_mthd'][i]) # NONE
+            entries[i]['cal_file'] = maybe_missing(table['cal_file'][i]) # NONE
+            entries[i]['rfi_method'] = maybe_missing(table['rfi_mthd'][i]) # NONE
+            entries[i]['rm_model'] = maybe_missing(table['rm_model'][i]) # NONE
             entries[i]['aux_rm_corrected'] = bool(table['aux_rm_c'][i])
-            entries[i]['dm_model'] = table['dm_model'][i]
+            entries[i]['dm_model'] = maybe_missing(table['dm_model'][i]) # NONE
             entries[i]['aux_dm_corrected'] = bool(table['aux_dm_c'][i])
         return [cls(**entry) for entry in entries]
     

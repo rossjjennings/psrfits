@@ -8,6 +8,7 @@ import astropy.units as u
 from pint.models import get_model
 import tempfile
 from xpsrfits.attrs import *
+from xpsrfits.attrs.attrcollection import maybe_missing
 from xpsrfits.polarization import pol_split, pscrunch, to_stokes
 from xpsrfits.dispersion import dedisperse
 from xpsrfits.baseline import remove_baseline
@@ -69,7 +70,7 @@ def to_dataset(hdulist, weight=True):
         'frequency': primary_hdu.header['obsfreq'],
         'bandwidth': primary_hdu.header['obsbw'],
         'center_freq': history_hdu.data['ctr_freq'][-1],
-        'channel_offset': subint_hdu.header['nchnoffs'],
+        'channel_offset': maybe_missing(subint_hdu.header['nchnoffs']), # *
         'DM': subint_hdu.header['DM'],
         'RM': subint_hdu.header['RM'],
         'pol_type': subint_hdu.header['pol_type'],
