@@ -120,8 +120,6 @@ def get_coords(hdulist):
     subint_hdu = hdulist['subint']
     
     time = subint_hdu.data['offs_sub']
-    time = time + primary_hdu.header['stt_offs']
-    mjd = primary_hdu.header['stt_imjd']
     
     dat_freq = subint_hdu.data['dat_freq']
     freq = np.atleast_1d(native_byteorder(dat_freq[0]))
@@ -134,10 +132,7 @@ def get_coords(hdulist):
     phase = np.arange(history_hdu.data['nbin'][-1])*history_hdu.data['tbin'][-1]
     phase = phase*1000 # s -> ms
     
-    coords = {'time': time,
-              'freq': freq,
-              'phase': phase,
-              'MJD': mjd}
+    coords = {'time': time, 'freq': freq, 'phase': phase}
     
     return coords
 
