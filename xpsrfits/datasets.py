@@ -49,10 +49,57 @@ def to_dataset(hdulist, weight=True):
     
     # Add data vars
     duration = subint_hdu.data['tsubint']
+    data_vars['duration'] = (['time'], duration)
+    
     weights = subint_hdu.data['dat_wts']
     weights = weights.reshape(coords['time'].size, coords['freq'].size)
-    data_vars['duration'] = (['time'], duration)
     data_vars['weights'] = (['time', 'freq'], weights)
+    
+    index = subint_hdu.data['indexval']
+    if not all(index == 0):
+        data_vars['index'] = (['time'], index)
+    
+    lst = subint_hdu.data['lst_sub']
+    if not all(lst == lst[0]):
+        data_vars['LST'] = (['time'], lst)
+    
+    ra = subint_hdu.data['ra_sub']
+    dec = subint_hdu.data['dec_sub']
+    if not (all(ra == ra[0]) and all(dec == dec[0])):
+        data_vars['ra'] = (['time'], ra)
+        data_vars['dec'] = (['time'], dec)
+    
+    glon = subint_hdu.data['glon_sub']
+    glat = subint_hdu.data['glat_sub']
+    if not (all(glon == glon[0]) and all(glat == glat[0])):
+        data_vars['glon'] = (['time'], glon)
+        data_vars['glon'] = (['time'], glat)
+    
+    feed_angle = subint_hdu.data['fd_ang']
+    if not all(feed_angle == 0):
+        data_vars['feed_angle'] = (['time'], feed_angle)
+    
+    pos_angle = subint_hdu.data['pos_ang']
+    if not all(pos_angle == 0):
+        data_vars['pos_angle'] = (['time'], pos_angle)
+    
+    par_angle = subint_hdu.data['par_ang']
+    if not all(par_angle == 0):
+        data_vars['par_angle'] = (['time'], par_angle)
+    
+    az = subint_hdu.data['tel_az']
+    zen = subint_hdu.data['tel_zen']
+    if not (all(az == az[0]) and all(zen == zen[0])):
+        data_vars['az'] = (['time'], az)
+        data_vars['zen'] = (['time'], zen)
+    
+    aux_dm = subint_hdu.data['aux_dm']
+    if not all(aux_dm == 0):
+        data_vars['aux_dm'] = (['time'], aux_dm)
+    
+    aux_rm = subint_hdu.data['aux_rm']
+    if not all(aux_rm == 0):
+        data_vars['aux_rm'] = (['time'], aux_rm)
     
     start_time = Time(primary_hdu.header['stt_imjd'], format='mjd')
     start_time += primary_hdu.header['stt_smjd']*u.s
