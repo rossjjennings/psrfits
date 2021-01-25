@@ -8,20 +8,20 @@ def pol_split(data, pol_type):
     constructing an xarray Dataset.
     '''
     if pol_type in ['AA+BB', 'INTEN']:
-        I, = np.transpose(data, (1, 0, 2, 3))
+        I, = np.swapaxes(data, 0, 1)
         data_vars = {'I': (['time', 'freq', 'phase'], I)}
     elif pol_type == 'AABB':
-        AA, BB = np.transpose(data, (1, 0, 2, 3))
+        AA, BB = np.swapaxes(data, 0, 1)
         data_vars = {'AA': (['time', 'freq', 'phase'], AA),
                      'BB': (['time', 'freq', 'phase'], BB)}
     elif pol_type == 'AABBCRCI':
-        AA, BB, CR, CI = np.transpose(data, (1, 0, 2, 3))
+        AA, BB, CR, CI = np.swapaxes(data, 0, 1)
         data_vars = {'AA': (['time', 'freq', 'phase'], AA),
                      'BB': (['time', 'freq', 'phase'], BB),
                      'CR': (['time', 'freq', 'phase'], CR),
                      'CI': (['time', 'freq', 'phase'], CI)}
     elif pol_type == 'IQUV':
-        I, Q, U, V = np.transpose(data, (1, 0, 2, 3))
+        I, Q, U, V = np.swapaxes(data, 0, 1)
         data_vars = {'I': (['time', 'freq', 'phase'], I),
                      'Q': (['time', 'freq', 'phase'], Q),
                      'U': (['time', 'freq', 'phase'], U),

@@ -9,7 +9,7 @@ from pint.models import get_model
 import tempfile
 from xpsrfits.attrs import *
 from xpsrfits.attrs.attrcollection import maybe_missing
-from xpsrfits.polarization import pol_split, pscrunch, to_stokes
+from xpsrfits.polarization import pol_split, get_pols, pscrunch, to_stokes
 from xpsrfits.dispersion import dedisperse
 from xpsrfits.baseline import remove_baseline
 
@@ -27,15 +27,20 @@ def ingest(filename, weight=True, DM=None, wcfreq=False,
         ds = to_stokes(ds)
     return ds
 
-def load(filename, weight=True):
+def read(filename):
     '''
     Open a PSRFITS file and load the contents into an xarray Dataset.
     '''
     with fits.open(filename) as hdulist:
-        ds = to_dataset(hdulist, weight)
+        ds = to_dataset(hdulist)
     return ds
 
-def to_dataset(hdulist, weight=True): 
+def load(filename, weight=True):
+    ds = read(filename)
+    ds = unpack(ds)
+    return ds
+
+def to_dataset(hdulist):
     '''
     Convert a FITS HDUList object into an xarray Dataset.
     '''
@@ -43,7 +48,7 @@ def to_dataset(hdulist, weight=True):
     history_hdu = hdulist['history']
     subint_hdu = hdulist['subint']
     
-    data = get_data(subint_hdu, weight)
+    data = subint_hdu.data['data']
     data_vars = pol_split(data, subint_hdu.header['pol_type'])
     coords = get_coords(hdulist)
     
@@ -126,39 +131,49 @@ def to_dataset(hdulist, weight=True):
         'time_var': subint_hdu.header['int_type'],
         'flux_unit': subint_hdu.header['scale'],
         'time_per_bin': history_hdu.data['tbin'][-1],
+        'scale': subint_hdu.data['dat_scl'],
+        'offset': subint_hdu.data['dat_offs'],
     }
     
     ds = xr.Dataset(data_vars, coords, attrs)
     
     return ds
-    
-def get_data(subint_hdu, weight=True):
+
+def unpack(ds, weight=True):
     '''
-    Construct an array of data in meaningful units from the 'SUBINT' HDU
-    of a PSRFITS file by applying the scaling, offset, and weights given
-    in the file.
+    Convert a dataset into meaningful units by apply the scaling, offset, and,
+    if specified by the `weight` parameter, the weights, given in the file.
     '''
-    data = subint_hdu.data['data']
-    nsub, npol, nchan, nbin = data.shape
-    pol_type = subint_hdu.header['pol_type']
-    
-    scale = subint_hdu.data['dat_scl']
-    offset = subint_hdu.data['dat_offs']
-    weights = subint_hdu.data['dat_wts']
+    nsub = ds.time.size
+    nchan = ds.freq.size
+    nbin = ds.phase.size
+    npol = len(get_pols(ds))
     
     # state assumptions explicitly
-    assert scale.size == nsub*npol*nchan # Less aggressive check to accomodate templates
-    assert offset.size == nsub*npol*nchan
-    assert weights.size == nsub*nchan
+    assert ds.scale.size == nsub*npol*nchan
+    assert ds.offset.size == nsub*npol*nchan
+    assert ds.weights.size == nsub*nchan
+    scales = ds.scale.reshape(nsub, npol, nchan)
+    scales = pol_split(scales, ds.pol_type)
+    offsets = ds.offset.reshape(nsub, npol, nchan)
+    offsets = pol_split(offsets, ds.pol_type)
+    weights = ds.weights.data.reshape(nsub, nchan, 1)
     
-    scale = scale.reshape(nsub, npol, nchan)
-    offset = offset.reshape(nsub, npol, nchan)
-    weights = weights.reshape(nsub, 1, nchan, 1)
-    data = (scale*data.transpose((3,0,1,2)) + offset).transpose((1,2,3,0))
-    if weight:
-        data = weights*data
+    new_data_vars = dict(ds.data_vars)
+    for pol in get_pols(ds):
+        data = ds.data_vars[pol]
+        scale = scales[pol][-1].reshape(nsub, nchan, 1)
+        offset = offsets[pol][-1].reshape(nsub, nchan, 1)
+        unpacked_data = scale*data + offset
+        if weight:
+            unpacked_data = weights*unpacked_data
+        new_data_vars[pol] = (['time', 'freq', 'phase'], unpacked_data)
     
-    return data
+    new_attrs = ds.attrs.copy()
+    del new_attrs['scale']
+    del new_attrs['offset']
+    
+    return xr.Dataset(new_data_vars, ds.coords, new_attrs)
 
 def get_coords(hdulist):
     '''
