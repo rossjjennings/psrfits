@@ -66,8 +66,7 @@ class PolycoEntry(AttrCollection):
                 'ref_f0': table['ref_f0'][i],
                 'coeffs': table['coeff'][i],
             }
-            return [cls(**entry) for entry in entries]
-        return entries
+        return [cls(**entry) for entry in entries]
     
     def __str__(self):
         return f'<PolycoEntry>'
