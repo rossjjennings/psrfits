@@ -5,8 +5,6 @@ from astropy.io import fits
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, EarthLocation
 import astropy.units as u
-from pint.models import get_model
-import tempfile
 from xpsrfits.attrs import *
 from xpsrfits.attrs.attrcollection import maybe_missing
 from xpsrfits.polarization import pol_split, get_pols, pscrunch, to_stokes
@@ -206,19 +204,3 @@ def get_coords(hdulist):
     coords = {'time': time, 'freq': freq, 'phase': phase}
     
     return coords
-
-def native_byteorder(arr):
-    '''
-    Convert an array to native byte order if it is not already.
-    '''
-    if arr.dtype.byteorder != '=':
-        return arr.byteswap().newbyteorder()
-    else:
-        return arr
-
-def get_pint_model(ds):
-    with tempfile.NamedTemporaryFile('w+') as tp:
-        tp.write(ds.source.model)
-        tp.flush()
-        model = get_model(tp.name)
-    return model
