@@ -30,9 +30,21 @@ class Telescope(AttrCollection):
         return description
     
     def header_cards(self):
-        return {
+        cards = {
             'telescop': self.name,
-            'ant_x': self.location.x.to(u.m).value,
-            'ant_y': self.location.y.to(u.m).value,
-            'ant_z': self.location.z.to(u.m).value,
         }
+        
+        if self.location is None:
+            cards.update({
+                'ant_x': '*',
+                'ant_y': '*',
+                'ant_z': '*',
+            })
+        else:
+            cards.update({
+                'ant_x': self.location.x.to(u.m).value,
+                'ant_y': self.location.y.to(u.m).value,
+                'ant_z': self.location.z.to(u.m).value,
+            })
+        
+        return cards

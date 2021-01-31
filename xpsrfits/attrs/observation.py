@@ -5,7 +5,7 @@ import astropy.units as u
 from pint import PulsarEcliptic
 import warnings
 
-from .attrcollection import AttrCollection, maybe_missing
+from .attrcollection import AttrCollection, maybe_missing, if_missing
 
 class Observation(AttrCollection):
     __slots__ = (
@@ -98,7 +98,7 @@ class Observation(AttrCollection):
             track_mode = header['trk_mode'],
             start_coords = stop_coords,
             stop_coords = stop_coords,
-            scan_length = maybe_missing(header['scanlen']), #*
+            scan_length = maybe_missing(header['scanlen']),
             feed_mode = header['fd_mode'],
             feed_angle = header['fa_req'],
         )
@@ -133,7 +133,7 @@ class Observation(AttrCollection):
             'trk_mode': self.track_mode,
             'stp_crd1': stop_coords_icrs.ra.to_string(unit=u.hourangle, sep=':'),
             'stp_crd2': stop_coords_icrs.dec.to_string(unit=u.deg, sep=':'),
-            'scanlen': self.scan_length,
+            'scanlen': if_missing('*', self.scan_length),
             'fd_mode': self.feed_mode,
             'fa_req': self.feed_angle,
         }

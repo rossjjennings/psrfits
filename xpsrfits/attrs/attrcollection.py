@@ -48,3 +48,9 @@ def maybe_missing(item):
         return None
     else:
         return item
+
+def if_missing(alt_text, item):
+    if item is None:
+        return alt_text
+    else:
+        return item

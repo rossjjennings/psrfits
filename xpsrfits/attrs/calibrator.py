@@ -1,6 +1,6 @@
 from textwrap import indent
 
-from .attrcollection import AttrCollection, maybe_missing
+from .attrcollection import AttrCollection, maybe_missing, if_missing
 
 class Calibrator(AttrCollection):
     __slots__ = 'mode', 'freq', 'duty_cycle', 'phase', 'n_phase'
@@ -8,11 +8,11 @@ class Calibrator(AttrCollection):
     @classmethod
     def from_header(cls, header):
         return cls(
-            mode = maybe_missing(header['cal_mode']), # ''
-            freq = maybe_missing(header['cal_freq']), # *
-            duty_cycle = maybe_missing(header['cal_dcyc']), # *
-            phase = maybe_missing(header['cal_phs']), # *
-            n_phase = maybe_missing(header['cal_nphs']), # *
+            mode = maybe_missing(header['cal_mode']),
+            freq = maybe_missing(header['cal_freq']),
+            duty_cycle = maybe_missing(header['cal_dcyc']),
+            phase = maybe_missing(header['cal_phs']),
+            n_phase = maybe_missing(header['cal_nphs']),
         )
     
     def __str__(self):
@@ -28,9 +28,9 @@ class Calibrator(AttrCollection):
     
     def header_cards(self):
         return {
-            'cal_mode': self.mode,
-            'cal_freq': self.freq,
-            'cal_dcyc': self.duty_cycle,
-            'cal_phs': self.phase,
-            'cal_nphs': self.n_phase,
+            'cal_mode': if_missing('', self.mode),
+            'cal_freq': if_missing('*', self.freq),
+            'cal_dcyc': if_missing('*', self.duty_cycle),
+            'cal_phs': if_missing('*', self.phase),
+            'cal_nphs': if_missing('*', self.n_phase),
         }
