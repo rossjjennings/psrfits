@@ -23,3 +23,13 @@ class Backend(AttrCollection):
         description = "<xpsrfits.Backend>\n"
         description += indent(self._repr_items(), '    ')
         return description
+    
+    def header_cards(self):
+        return {
+            'backend': self.name,
+            'beconfig': self.config,
+            'be_phase': self.phase,
+            'be_dcc': self.dcc,
+            'be_delay': self.delay,
+            'tcycle': self.cycle_time,
+        }

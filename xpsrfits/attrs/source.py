@@ -28,3 +28,8 @@ class Source(AttrCollection):
         description = "<xpsrfits.Source>\n"
         description += indent(self._repr_items(), '    ')
         return description
+    
+    def header_cards(self):
+        return {
+            'src_name': self.name,
+        }

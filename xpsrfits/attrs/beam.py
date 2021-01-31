@@ -25,3 +25,12 @@ class Beam(AttrCollection):
         description = "<xpsrfits.Beam>\n"
         description += indent(self._repr_items(), '    ')
         return description
+    
+    def header_cards(self):
+        return {
+            'ibeam': self.beam_id,
+            'bmaj': self.major_axis,
+            'bmin': self.minor_axis,
+            'bpa': self.pos_angle,
+            'pnt_id': self.center_id,
+        }

@@ -25,3 +25,12 @@ class Calibrator(AttrCollection):
         description = "<xpsrfits.Calibrator>\n"
         description += indent(self._repr_items(), '    ')
         return description
+    
+    def header_cards(self):
+        return {
+            'cal_mode': self.mode,
+            'cal_freq': self.freq,
+            'cal_dcyc': self.duty_cycle,
+            'cal_phs': self.phase,
+            'cal_nphs': self.n_phase,
+        }

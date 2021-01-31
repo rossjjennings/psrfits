@@ -28,3 +28,11 @@ class Telescope(AttrCollection):
         description = "<xpsrfits.Telescope>\n"
         description += indent(self._repr_items(), '    ')
         return description
+    
+    def header_cards(self):
+        return {
+            'telescop': self.name,
+            'ant_x': self.location.x.to(u.m).value,
+            'ant_y': self.location.y.to(u.m).value,
+            'ant_z': self.location.z.to(u.m).value,
+        }

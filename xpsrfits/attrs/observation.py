@@ -1,6 +1,6 @@
 from textwrap import indent
 from astropy.time import Time
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord, ICRS
 import astropy.units as u
 from pint import PulsarEcliptic
 import warnings
@@ -36,7 +36,7 @@ class Observation(AttrCollection):
                 frame='icrs',
             )
         else:
-            msg = f"Equinox is not J2000: using dynamical equinox J{equinox}"
+            msg = f"Interpreting equinox J{equinox} using astropy.coordinates.PrecessedGeocentric"
             warnings.warn(msg, RuntimeWarning)
             coords = SkyCoord(
                 ra=header['ra'],
@@ -61,6 +61,7 @@ class Observation(AttrCollection):
                 frame='icrs',
             )
         elif coord_mode == 'GALACTIC':
+            warnings.warn("Interpreting galactic coordinates using astropy.coordinates.Galactic")
             start_coords = SkyCoord(
                 lon=header['stt_crd1'],
                 lat=header['stt_crd2'],
@@ -74,7 +75,7 @@ class Observation(AttrCollection):
                 frame='galactic',
             )
         elif coord_mode == 'ECLIPTIC':
-            warnings.warn("ECLIPTIC mode is ambiguous: using IERS2010 obliquity")
+            warnings.warn("Interpreting ecliptic coordinates using IERS2010 obliquity")
             start_coords = SkyCoord(
                 lon=header['stt_crd1'],
                 lat=header['stt_crd2'],
@@ -109,3 +110,30 @@ class Observation(AttrCollection):
         description = "<xpsrfits.Observation>\n"
         description += indent(self._repr_items(), '    ')
         return description
+    
+    def header_cards(self):
+        if (self.coords.frame.__class__.__name__ != 'ICRS'
+            or self.start_coords.frame.__class__.__name__ != 'ICRS'
+            or self.stop_coords.frame.__class__.__name__ != 'ICRS'):
+            warnings.warn("Converting coordinates to J2000 for output")
+        coords_icrs = self.coords.transform_to(ICRS)
+        start_coords_icrs = self.start_coords.transform_to(ICRS)
+        stop_coords_icrs = self.stop_coords.transform_to(ICRS)
+        return {
+            'observer': self.observer,
+            'projid': self.project_id,
+            'obs_mode': self.mode,
+            'date-obs': self.date.isot,
+            'coord_md': 'J2000',
+            'equinox': '2000.0',
+            'ra': coords_icrs.ra.to_string(unit=u.hourangle, sep=':'),
+            'dec': coords_icrs.dec.to_string(unit=u.deg, sep=':'),
+            'stt_crd1': start_coords_icrs.ra.to_string(unit=u.hourangle, sep=':'),
+            'stt_crd2': start_coords_icrs.dec.to_string(unit=u.deg, sep=':'),
+            'trk_mode': self.track_mode,
+            'stp_crd1': stop_coords_icrs.ra.to_string(unit=u.hourangle, sep=':'),
+            'stp_crd2': stop_coords_icrs.dec.to_string(unit=u.deg, sep=':'),
+            'scanlen': self.scan_length,
+            'fd_mode': self.feed_mode,
+            'fa_req': self.feed_angle,
+        }
