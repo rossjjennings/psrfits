@@ -3,6 +3,7 @@ from astropy.time import Time
 from astropy.coordinates import SkyCoord, ICRS
 import astropy.units as u
 from pint import PulsarEcliptic
+from datetime import datetime
 import warnings
 
 from .attrcollection import AttrCollection, maybe_missing, if_missing
@@ -123,7 +124,7 @@ class Observation(AttrCollection):
             'observer': self.observer,
             'projid': self.project_id,
             'obs_mode': self.mode,
-            'date-obs': self.date.isot,
+            'date-obs': datetime.strftime(self.date.datetime, '%Y-%m-%dT%H:%M:%S'),
             'coord_md': 'J2000',
             'equinox': '2000.0',
             'ra': coords_icrs.ra.to_string(unit=u.hourangle, sep=':'),
