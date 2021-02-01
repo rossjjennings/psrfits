@@ -39,6 +39,7 @@ def to_hdulist(ds):
         'stt_smjd': int(smjd),
         'stt_offs': smjd % 1,
         'stt_lst': ds.start_lst,
+    }
     
     header_cards.update(ds.source.header_cards())
     header_cards.update(ds.observation.header_cards())
