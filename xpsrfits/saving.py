@@ -14,6 +14,10 @@ def to_hdulist(ds):
     '''
     Convert an xpsrfits dataset to a FITS HDU list for saving.
     '''
+    base_dir = os.path.dirname(__file__)
+    comments_file = os.path.join(base_dir, "standard-comments.toml")
+    comments = toml.load(comments_file)
+    
     primary_hdu = fits.PrimaryHDU()
     fits_description = dedent("""
     FITS (Flexible Image Transport System) format is defined in 'Astronomy
@@ -52,10 +56,18 @@ def to_hdulist(ds):
     for key, value in header_cards.items():
         primary_hdu.header[key] = value
     
-    base_dir = os.path.dirname(__file__)
-    comments_file = os.path.join(base_dir, "standard-comments.toml")
-    comments = toml.load(comments_file)['primary']
-    for key, value in comments.items():
+    for key, value in comments['primary'].items():
         primary_hdu.header.comments[key] = value
     
-    return fits.HDUList([primary_hdu])
+    param_data = np.array(
+        [line for line in ds.source.model.split('\n')],
+        dtype=(np.record, [('PARAM', 'S128')])
+    )
+    psrparam_hdu = fits.BinTableHDU(data=param_data)
+    psrparam_hdu.header['extname'] = 'PSRPARAM'
+    psrparam_hdu.header['extver'] = 1
+    
+    for key, value in comments['psrparam'].items():
+        psrparam_hdu.header.comments[key] = value
+    
+    return fits.HDUList([primary_hdu, psrparam_hdu])
