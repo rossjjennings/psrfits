@@ -7,6 +7,8 @@ from astropy.coordinates import SkyCoord, EarthLocation
 import astropy.units as u
 from datetime import datetime
 from textwrap import dedent
+import toml
+import os.path
 
 def to_hdulist(ds):
     '''
@@ -36,8 +38,7 @@ def to_hdulist(ds):
         'stt_imjd': imjd,
         'stt_smjd': int(smjd),
         'stt_offs': smjd % 1,
-        'stt_lst': '*',
-    }
+        'stt_lst': ds.start_lst,
     
     header_cards.update(ds.source.header_cards())
     header_cards.update(ds.observation.header_cards())
@@ -47,7 +48,13 @@ def to_hdulist(ds):
     header_cards.update(ds.beam.header_cards())
     header_cards.update(ds.calibrator.header_cards())
     
-    for key in header_cards:
-        primary_hdu.header[key] = header_cards[key]
+    for key, value in header_cards.items():
+        primary_hdu.header[key] = value
+    
+    base_dir = os.path.dirname(__file__)
+    comments_file = os.path.join(base_dir, "standard-comments.toml")
+    comments = toml.load(comments_file)['primary']
+    for key, value in comments.items():
+        primary_hdu.header.comments[key] = value
     
     return fits.HDUList([primary_hdu])

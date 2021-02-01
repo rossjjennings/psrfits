@@ -64,7 +64,7 @@ def to_dataset(hdulist):
     
     lst = subint_hdu.data['lst_sub']
     if not all(lst == lst[0]):
-        data_vars['LST'] = (['time'], lst)
+        data_vars['lst'] = (['time'], lst)
     
     ra = subint_hdu.data['ra_sub']
     dec = subint_hdu.data['dec_sub']
@@ -125,6 +125,7 @@ def to_dataset(hdulist):
         'RM': subint_hdu.header['RM'],
         'pol_type': subint_hdu.header['pol_type'],
         'start_time': start_time,
+        'start_lst': primary_hdu.header['stt_lst'],
         'epoch_type': subint_hdu.header['epochs'],
         'time_var': subint_hdu.header['int_type'],
         'flux_unit': subint_hdu.header['scale'],
