@@ -31,7 +31,7 @@ def to_hdulist(ds):
         primary_hdu.header['comment'] = line
     
     imjd = int(ds.start_time.mjd)
-    smjd = 86400*(ds.start_time.mjd_long - imjd) # not leap second accurate?
+    smjd = (ds.start_time - Time(imjd, format='mjd')).to(u.s).value
     header_cards = {
         'fitstype': 'PSRFITS',
         'hdrver': '6.1',

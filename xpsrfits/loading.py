@@ -105,6 +105,7 @@ def to_dataset(hdulist):
         data_vars['aux_rm'] = (['time'], aux_rm)
     
     start_time = Time(primary_hdu.header['stt_imjd'], format='mjd')
+    start_time.format = 'isot'
     start_time += primary_hdu.header['stt_smjd']*u.s
     start_time += primary_hdu.header['stt_offs']*u.s
     
