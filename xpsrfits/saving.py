@@ -92,4 +92,20 @@ def to_hdulist(ds):
         
         hdus.append(t2predict_hdu)
     
+    # Construct History HDU
+    table = ds.history.as_table()
+    history_hdu = fits.BinTableHDU(data=table)
+    history_hdu.header['tunit9'] = 's'
+    history_hdu.header['tunit10'] = 'MHz'
+    history_hdu.header['tunit12'] = 'MHz'
+    history_hdu.header['tunit13'] = 'pc.cm-3'
+    history_hdu.header['tunit14'] = 'rad'
+    history_hdu.header['extname'] = 'HISTORY'
+    history_hdu.header['extver'] = 1
+    
+    for key, value in comments['history'].items():
+        history_hdu.header.comments[key] = value
+    
+    hdus.append(history_hdu)
+    
     return fits.HDUList(hdus)
