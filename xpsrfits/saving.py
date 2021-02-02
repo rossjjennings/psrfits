@@ -92,6 +92,20 @@ def to_hdulist(ds):
         
         hdus.append(t2predict_hdu)
     
+    # Construct Polyco HDU, if appropriate
+    if ds.source.polyco is not None:
+        polyco_data = ds.source.polyco.as_table()
+        polyco_hdu = fits.BinTableHDU(data=polyco_data)
+        polyco_hdu.header['tunit7'] = 'MHz'
+        polyco_hdu.header['tunit11'] = 'Hz'
+        polyco_hdu.header['extname'] = 'POLYCO'
+        polyco_hdu.header['extver'] = 1
+        
+        for key, value in comments['polyco'].items():
+            polyco_hdu.header.comments[key] = value
+        
+        hdus.append(polyco_hdu)
+    
     # Construct History HDU
     table = ds.history.as_table()
     history_hdu = fits.BinTableHDU(data=table)
