@@ -70,34 +70,36 @@ class HistoryEntry(AttrCollection):
         entries = [{} for i in range(table.size)]
         for i in range(table.size):
             timestamp = datetime.strptime(table['date_pro'][i], '%a %b %d %H:%M:%S %Y')
-            entries[i]['date'] = Time(timestamp)
-            entries[i]['command'] = maybe_missing(table['proc_cmd'][i]) # UNKNOWN
-            entries[i]['flux_unit'] = table['scale'][i]
-            entries[i]['pol_type'] = table['pol_type'][i]
-            entries[i]['n_subints'] = table['nsub'][i]
-            entries[i]['n_polns'] = table['npol'][i]
-            entries[i]['n_bins'] = table['nbin'][i]
-            entries[i]['bins_per_period'] = table['nbin_prd'][i]
-            entries[i]['time_per_bin'] = table['tbin'][i]
-            entries[i]['center_freq'] = table['ctr_freq'][i]
-            entries[i]['n_channels'] = table['nchan'][i]
-            entries[i]['channel_bandwidth'] = table['chan_bw'][i]
-            entries[i]['DM'] = table['DM'][i]
-            entries[i]['RM'] = table['RM'][i]
-            entries[i]['projection_corrected'] = bool(table['pr_corr'][i])
-            entries[i]['feed_corrected'] = bool(table['fd_corr'][i])
-            entries[i]['backend_corrected'] = bool(table['be_corr'][i])
-            entries[i]['rm_corrected'] = bool(table['rm_corr'][i])
-            entries[i]['dedispersed'] = bool(table['dedisp'][i])
-            entries[i]['dedisp_method'] = maybe_missing(table['dds_mthd'][i]) # UNSET
-            entries[i]['scatter_method'] = maybe_missing(table['sc_mthd'][i]) # NONE
-            entries[i]['cal_method'] = maybe_missing(table['cal_mthd'][i]) # NONE
-            entries[i]['cal_file'] = maybe_missing(table['cal_file'][i]) # NONE
-            entries[i]['rfi_method'] = maybe_missing(table['rfi_mthd'][i]) # NONE
-            entries[i]['rm_model'] = maybe_missing(table['rm_model'][i]) # NONE
-            entries[i]['aux_rm_corrected'] = bool(table['aux_rm_c'][i])
-            entries[i]['dm_model'] = maybe_missing(table['dm_model'][i]) # NONE
-            entries[i]['aux_dm_corrected'] = bool(table['aux_dm_c'][i])
+            entries[i] = {
+                'date': Time(timestamp),
+                'command': maybe_missing(table['proc_cmd'][i]), # UNKNOWN
+                'flux_unit': table['scale'][i],
+                'pol_type': table['pol_type'][i],
+                'n_subints': table['nsub'][i],
+                'n_polns': table['npol'][i],
+                'n_bins':table['nbin'][i],
+                'bins_per_period': table['nbin_prd'][i],
+                'time_per_bin': table['tbin'][i],
+                'center_freq': table['ctr_freq'][i],
+                'n_channels': table['nchan'][i],
+                'channel_bandwidth': table['chan_bw'][i],
+                'DM': table['DM'][i],
+                'RM': table['RM'][i],
+                'projection_corrected': bool(table['pr_corr'][i]),
+                'feed_corrected': bool(table['fd_corr'][i]),
+                'backend_corrected': bool(table['be_corr'][i]),
+                'rm_corrected': bool(table['rm_corr'][i]),
+                'dedispersed': bool(table['dedisp'][i]),
+                'dedisp_method': maybe_missing(table['dds_mthd'][i]), # UNSET
+                'scatter_method': maybe_missing(table['sc_mthd'][i]), # NONE
+                'cal_method': maybe_missing(table['cal_mthd'][i]), # NONE
+                'cal_file': maybe_missing(table['cal_file'][i]), # NONE
+                'rfi_method': maybe_missing(table['rfi_mthd'][i]), # NONE
+                'rm_model': maybe_missing(table['rm_model'][i]), # NONE
+                'aux_rm_corrected': bool(table['aux_rm_c'][i]),
+                'dm_model': maybe_missing(table['dm_model'][i]), # NONE
+                'aux_dm_corrected': bool(table['aux_dm_c'][i]),
+            }
         return [cls(**entry) for entry in entries]
     
     def __str__(self):
