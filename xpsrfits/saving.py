@@ -17,7 +17,9 @@ def to_hdulist(ds):
     base_dir = os.path.dirname(__file__)
     comments_file = os.path.join(base_dir, "standard-comments.toml")
     comments = toml.load(comments_file)
+    hdus = []
     
+    # Construct primary HDU
     primary_hdu = fits.PrimaryHDU()
     fits_description = dedent("""
     FITS (Flexible Image Transport System) format is defined in 'Astronomy
@@ -59,6 +61,9 @@ def to_hdulist(ds):
     for key, value in comments['primary'].items():
         primary_hdu.header.comments[key] = value
     
+    hdus.append(primary_hdu)
+    
+    # Construct PSRPARAM HDU
     param_data = np.array(
         [line for line in ds.source.model.split('\n')],
         dtype=(np.record, [('PARAM', 'S128')])
@@ -70,4 +75,21 @@ def to_hdulist(ds):
     for key, value in comments['psrparam'].items():
         psrparam_hdu.header.comments[key] = value
     
-    return fits.HDUList([primary_hdu, psrparam_hdu])
+    hdus.append(psrparam_hdu)
+    
+    # Construct Tempo2 predictor HDU, if appropriate
+    if ds.source.predictor is not None:
+        predictor_data = np.array(
+            [line for line in ds.source.model.split('\n')],
+            dtype=(np.record, [('PREDICT', 'S128')])
+        )
+        t2predict_hdu = fits.BinTableHDU(data=predictor_data)
+        t2predict_hdu.header['extname'] = 'T2PREDICT'
+        t2predict_hdu.header['extver'] = 1
+        
+        for key, value in comments['t2predict'].items():
+            psrparam_hdu.header.comments[key] = value
+        
+        hdus.append(t2predict_hdu)
+    
+    return fits.HDUList(hdus)
