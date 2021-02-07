@@ -44,7 +44,7 @@ def to_hdulist(ds):
         'stt_imjd': imjd,
         'stt_smjd': int(smjd),
         'stt_offs': smjd % 1,
-        'stt_lst': ds.start_lst,
+        'stt_lst': 3600*ds.start_lst.to(u.hourangle).value,
     }
     
     header_cards.update(ds.source.header_cards())

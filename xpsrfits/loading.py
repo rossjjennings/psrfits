@@ -3,7 +3,7 @@ import xarray as xr
 import warnings
 from astropy.io import fits
 from astropy.time import Time
-from astropy.coordinates import SkyCoord, EarthLocation
+from astropy.coordinates import SkyCoord, EarthLocation, Longitude
 import astropy.units as u
 from xpsrfits.attrs import *
 from xpsrfits.attrs.attrcollection import maybe_missing
@@ -126,7 +126,7 @@ def to_dataset(hdulist):
         'RM': subint_hdu.header['RM'],
         'pol_type': subint_hdu.header['pol_type'],
         'start_time': start_time,
-        'start_lst': primary_hdu.header['stt_lst'],
+        'start_lst': Longitude(primary_hdu.header['stt_lst']/3600, u.hourangle),
         'epoch_type': subint_hdu.header['epochs'],
         'time_var': subint_hdu.header['int_type'],
         'flux_unit': subint_hdu.header['scale'],
