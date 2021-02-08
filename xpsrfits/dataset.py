@@ -11,10 +11,6 @@ class Dataset:
         lines[0] = '<xpsrfits.Dataset>'
         return '\n'.join(lines)
     
-    def _repr_html_(self):
-        html = self._ds._repr_html_()
-        return 'xpsrfits.Dataset'.join(html.split('xarray.Dataset'))
-    
     def __getattr__(self, name):
         forwarded = (
             name in ['data_vars', 'coords', 'attrs']
