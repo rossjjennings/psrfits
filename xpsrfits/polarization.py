@@ -1,5 +1,6 @@
 import numpy as np
 import xarray as xr
+from xpsrfits.dataset import Dataset
 
 def pol_split(data, pol_type):
     '''
@@ -61,7 +62,7 @@ def pscrunch(ds):
         raise ValueError("Polarization type '{}' not recognized.".format(ds.pol_type))
     new_attrs = ds.attrs.copy()
     new_attrs['pol_type'] = 'AA+BB'
-    return xr.Dataset(new_data_vars, ds.coords, new_attrs)
+    return Dataset(new_data_vars, ds.coords, new_attrs)
 
 def to_stokes(ds):
     '''
@@ -90,4 +91,4 @@ def to_stokes(ds):
         new_data_vars['V'] = ds.AA - ds.BB
     new_attrs = ds.attrs.copy()
     new_attrs['pol_type'] = 'IQUV'
-    return xr.Dataset(new_data_vars, ds.coords, new_attrs)
+    return Dataset(new_data_vars, ds.coords, new_attrs)

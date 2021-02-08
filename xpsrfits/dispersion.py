@@ -2,6 +2,7 @@ import numpy as np
 from numpy import pi, sin, cos, exp, log, sqrt
 from numpy.fft import rfft, irfft, rfftfreq
 import xarray as xr
+from xpsrfits.dataset import Dataset
 from xpsrfits.polarization import get_pols
 
 def fft_roll(a, shift):
@@ -49,4 +50,4 @@ def dedisperse(ds, DM=None, weight_center_freq=False):
         dedispersed_arr = fft_roll(ds.data_vars[pol].values, bin_delays)
         new_data_vars.update({pol: (['time', 'freq', 'phase'], dedispersed_arr)})
     
-    return xr.Dataset(new_data_vars, ds.coords, ds.attrs)
+    return Dataset(new_data_vars, ds.coords, ds.attrs)

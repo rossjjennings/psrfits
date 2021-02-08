@@ -6,6 +6,7 @@ from astropy.time import Time
 from astropy.coordinates import SkyCoord, EarthLocation, Longitude
 import astropy.units as u
 from xpsrfits.attrs import *
+from xpsrfits.dataset import Dataset
 from xpsrfits.attrs.attrcollection import maybe_missing
 from xpsrfits.polarization import pol_split, get_pols, pscrunch, to_stokes
 from xpsrfits.dispersion import dedisperse
@@ -135,7 +136,7 @@ def to_dataset(hdulist):
         'offset': subint_hdu.data['dat_offs'],
     }
     
-    ds = xr.Dataset(data_vars, coords, attrs)
+    ds = Dataset(data_vars, coords, attrs)
     
     return ds
 
@@ -173,7 +174,7 @@ def unpack(ds, weight=True):
     del new_attrs['scale']
     del new_attrs['offset']
     
-    return xr.Dataset(new_data_vars, ds.coords, new_attrs)
+    return Dataset(new_data_vars, ds.coords, new_attrs)
 
 def get_coords(hdulist):
     '''

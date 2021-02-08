@@ -1,5 +1,6 @@
 import numpy as np
 import xarray as xr
+from xpsrfits.dataset import Dataset
 from xpsrfits.polarization import get_pols
 
 def remove_baseline(ds, method='median'):
@@ -22,7 +23,7 @@ def remove_baseline(ds, method='median'):
         adjusted_arr = arr - baseline
         new_data_vars.update({pol: adjusted_arr})
     
-    return xr.Dataset(new_data_vars, ds.coords, ds.attrs)
+    return Dataset(new_data_vars, ds.coords, ds.attrs)
 
 def offpulse_window(profile, size):
     '''
