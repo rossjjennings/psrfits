@@ -10,6 +10,8 @@ from textwrap import dedent
 import toml
 import os.path
 
+from .attrs.attrcollection import if_missing
+
 def to_hdulist(ds):
     '''
     Convert an xpsrfits dataset to a FITS HDU list for saving.
@@ -121,5 +123,59 @@ def to_hdulist(ds):
         history_hdu.header.comments[key] = value
     
     hdus.append(history_hdu)
+    
+    # Construct Subintegration HDU
+    subint_hdu = fits.BinTableHDU()
+    subint_header_cards = {
+        'int_type': ds.time_var,
+        'int_unit': ds.time_unit,
+        'scale': ds.flux_unit,
+        'pol_type': ds.pol_type,
+        'npol': ds.n_polns,
+        'tbin': ds.time_per_bin,
+        'nbin': ds.phase.shape[0],
+        'nbin_prd': int(1/(ds.phase.data[1]-ds.phase.data[0])),
+        'phs_offs': ds.phase.data[0],
+        'nbits': 1, # search mode data not currently supported
+        'zero_off': '*',
+        'signint': 0,
+        'nsuboffs': '*',
+        'nchan': ds.freq.shape[0],
+        'chan_bw': ds.channel_bandwidth,
+        'DM': ds.DM,
+        'RM': ds.RM,
+        'nchnoffs': if_missing('*', ds.channel_offset),
+        'nsblk': 1,
+        'nstot': '*',
+        'epochs': ds.epoch_type,
+        'tunit2': 's',
+        'tunit3': 's',
+        'tunit4': 's',
+        'tunit5': 'deg',
+        'tunit6': 'deg',
+        'tunit7': 'deg',
+        'tunit8': 'deg',
+        'tunit9': 'deg',
+        'tunit10': 'deg',
+        'tunit11': 'deg',
+        'tunit12': 'deg',
+        'tunit13': 'deg',
+        'tunit14': 'pc cm-3',
+        'tunit15': 'rad m-2',
+        'tunit16': 'MHz',
+        'tunit20': 'Jy',
+        'extname': 'SUBINT',
+        'extver': 1,
+    }
+    
+    for key, value in subint_header_cards.items():
+        subint_hdu.header[key] = value
+    
+    for key, value in comments['subint'].items():
+        if key in subint_header_cards:
+            subint_hdu.header.comments[key] = value
+    
+    hdus.append(subint_hdu)
+
     
     return fits.HDUList(hdus)
