@@ -64,8 +64,7 @@ def to_dataset(hdulist):
         data_vars['index'] = (['time'], index)
     
     lst = subint_hdu.data['lst_sub']
-    if not all(lst == lst[0]):
-        data_vars['lst'] = (['time'], lst)
+    data_vars['lst'] = (['time'], lst)
     
     ra = subint_hdu.data['ra_sub']
     dec = subint_hdu.data['dec_sub']
@@ -93,9 +92,8 @@ def to_dataset(hdulist):
     
     az = subint_hdu.data['tel_az']
     zen = subint_hdu.data['tel_zen']
-    if not (all(az == az[0]) and all(zen == zen[0])):
-        data_vars['az'] = (['time'], az)
-        data_vars['zen'] = (['time'], zen)
+    data_vars['az'] = (['time'], az)
+    data_vars['zen'] = (['time'], zen)
     
     aux_dm = subint_hdu.data['aux_dm']
     if not all(aux_dm == 0):
