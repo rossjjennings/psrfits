@@ -13,6 +13,10 @@ import os.path
 from .attrs.attrcollection import if_missing
 from .polarization import get_pols
 
+def save(filename, ds):
+    hdul = to_hdulist(ds)
+    hdul.writeto(filename)
+
 def to_hdulist(ds):
     '''
     Convert an xpsrfits dataset to a FITS HDU list for saving.
