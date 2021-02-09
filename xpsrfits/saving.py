@@ -3,7 +3,7 @@ import xarray as xr
 import warnings
 from astropy.io import fits
 from astropy.time import Time
-from astropy.coordinates import SkyCoord, EarthLocation
+from astropy.coordinates import SkyCoord, EarthLocation, Galactic
 import astropy.units as u
 from datetime import datetime
 from textwrap import dedent
@@ -11,6 +11,7 @@ import toml
 import os.path
 
 from .attrs.attrcollection import if_missing
+from .polarization import get_pols
 
 def to_hdulist(ds):
     '''
@@ -125,7 +126,80 @@ def to_hdulist(ds):
     hdus.append(history_hdu)
     
     # Construct Subintegration HDU
-    subint_hdu = fits.BinTableHDU()
+    if hasattr(ds, "ra") and hasattr(ds, "dec"):
+        ra = ds.ra
+        dec = ds.dec
+    else:
+        coords = ds.observation.coords
+        ra_val = coords.ra.to(u.deg).value
+        dec_val = coords.dec.to(u.deg).value
+        ra = np.full_like(ds.time, ra_val)
+        dec = np.full_like(ds.time, dec_val)
+    
+    if hasattr(ds, "glon") and hasattr(ds, "glat"):
+        glon = ds.glon
+        glat = ds.glat
+    else:
+        coords = ds.observation.coords
+        l_val = coords.transform_to(Galactic).l.to(u.deg).value
+        b_val = coords.transform_to(Galactic).b.to(u.deg).value
+        glon = np.full_like(ds.time, l_val)
+        glat = np.full_like(ds.time, b_val)
+    
+    data = np.array([getattr(ds, pol) for pol in get_pols(ds)])
+    data = np.swapaxes(data, 0, 1)
+    
+    coords = ds.observation.coords
+    subint_data = np.rec.fromarrays(
+        [
+            np.arange(ds.time.size),
+            ds.duration.data,
+            ds.time.data,
+            ds.lst.data,
+            ra,
+            dec,
+            glon,
+            glat,
+            ds.feed_angle if hasattr(ds, "feed_angle") else np.zeros_like(ds.time),
+            ds.pos_angle if hasattr(ds, "pos_angle") else np.zeros_like(ds.time),
+            ds.par_angle if hasattr(ds, "par_angle") else np.zeros_like(ds.time),
+            ds.az.data,
+            ds.zen.data,
+            ds.aux_dm if hasattr(ds, "aux_dm") else np.zeros_like(ds.time),
+            ds.aux_rm if hasattr(ds, "aux_rm") else np.zeros_like(ds.time),
+            np.tile(ds.freq, ds.time.size).reshape(ds.time.size, -1),
+            ds.weights,
+            np.zeros((ds.time.size, ds.n_polns*ds.freq.size)),
+            np.ones((ds.time.size, ds.n_polns*ds.freq.size)),
+            data,
+        ],
+        dtype=(np.record, [
+                ('INDEXVAL', '>f8'),
+                ('TSUBINT', '>f8'),
+                ('OFFS_SUB', '>f8'),
+                ('LST_SUB', '>f8'),
+                ('RA_SUB', '>f8'),
+                ('DEC_SUB', '>f8'),
+                ('GLON_SUB', '>f8'),
+                ('GLAT_SUB', '>f8'),
+                ('FD_ANG', '>f4'),
+                ('POS_ANG', '>f4'),
+                ('PAR_ANG', '>f4'),
+                ('TEL_AZ', '>f4'),
+                ('TEL_ZEN', '>f4'),
+                ('AUX_DM', '>f8'),
+                ('AUX_RM', '>f8'),
+                ('DAT_FREQ', '>f8', (ds.freq.size,)),
+                ('DAT_WTS', '>f4', (ds.freq.size,)),
+                ('DAT_OFFS', '>f4', (ds.n_polns*ds.freq.size,)),
+                ('DAT_SCL', '>f4', (ds.n_polns*ds.freq.size,)),
+                ('DATA', '>f8', (ds.n_polns, ds.freq.size, ds.phase.size)),
+            ]),
+        )
+        
+    
+    subint_hdu = fits.BinTableHDU(data=subint_data)
+    
     subint_header_cards = {
         'int_type': ds.time_var,
         'int_unit': ds.time_unit,
@@ -172,8 +246,7 @@ def to_hdulist(ds):
         subint_hdu.header[key] = value
     
     for key, value in comments['subint'].items():
-        if key in subint_header_cards:
-            subint_hdu.header.comments[key] = value
+        subint_hdu.header.comments[key] = value
     
     hdus.append(subint_hdu)
 
