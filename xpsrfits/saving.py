@@ -130,7 +130,7 @@ def construct_history_hdu(ds):
     history_hdu.header['tunit9'] = 's'
     history_hdu.header['tunit10'] = 'MHz'
     history_hdu.header['tunit12'] = 'MHz'
-    history_hdu.header['tunit13'] = 'pc.cm-3'
+    history_hdu.header['tunit13'] = 'pc cm-3'
     history_hdu.header['tunit14'] = 'rad'
     history_hdu.header['extname'] = 'HISTORY'
     history_hdu.header['extver'] = 1
