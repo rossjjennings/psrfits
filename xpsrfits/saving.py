@@ -21,8 +21,20 @@ def to_hdulist(ds):
     comments_file = os.path.join(base_dir, "standard-comments.toml")
     comments = toml.load(comments_file)
     hdus = []
-    
-    # Construct primary HDU
+    hdus.append(construct_primary_hdu(ds))
+    hdus.append(construct_history_hdu(ds))
+    hdus.append(construct_psrparam_hdu(ds))
+    if ds.source.predictor is not None:
+        hdus.append(construct_t2predict_hdu(ds))
+    if ds.source.polyco is not None:
+        hdus.append(construct_polyco_hdu(ds))
+    hdus.append(construct_subint_hdu(ds))
+    return fits.HDUList(hdus)
+
+def construct_primary_hdu(ds):
+    '''
+    Construct primary HDU
+    '''
     primary_hdu = fits.PrimaryHDU()
     fits_description = dedent("""
     FITS (Flexible Image Transport System) format is defined in 'Astronomy
@@ -64,9 +76,12 @@ def to_hdulist(ds):
     for key, value in comments['primary'].items():
         primary_hdu.header.comments[key] = value
     
-    hdus.append(primary_hdu)
-    
-    # Construct PSRPARAM HDU
+    return primary_hdu
+
+def construct_psrparam_hdu(ds):
+    '''
+    Construct PSRPARAM HDU
+    '''
     param_data = np.array(
         [line for line in ds.source.model.split('\n')],
         dtype=(np.record, [('PARAM', 'S128')])
@@ -78,38 +93,45 @@ def to_hdulist(ds):
     for key, value in comments['psrparam'].items():
         psrparam_hdu.header.comments[key] = value
     
-    hdus.append(psrparam_hdu)
+    return psrparam_hdu
+
+def construct_t2predict_hdu(ds):
+    '''
+    Construct Tempo2 predictor HDU
+    '''
+    predictor_data = np.array(
+        [line for line in ds.source.model.split('\n')],
+        dtype=(np.record, [('PREDICT', 'S128')])
+    )
+    t2predict_hdu = fits.BinTableHDU(data=predictor_data)
+    t2predict_hdu.header['extname'] = 'T2PREDICT'
+    t2predict_hdu.header['extver'] = 1
     
-    # Construct Tempo2 predictor HDU, if appropriate
-    if ds.source.predictor is not None:
-        predictor_data = np.array(
-            [line for line in ds.source.model.split('\n')],
-            dtype=(np.record, [('PREDICT', 'S128')])
-        )
-        t2predict_hdu = fits.BinTableHDU(data=predictor_data)
-        t2predict_hdu.header['extname'] = 'T2PREDICT'
-        t2predict_hdu.header['extver'] = 1
-        
-        for key, value in comments['t2predict'].items():
-            psrparam_hdu.header.comments[key] = value
-        
-        hdus.append(t2predict_hdu)
+    for key, value in comments['t2predict'].items():
+        psrparam_hdu.header.comments[key] = value
     
-    # Construct Polyco HDU, if appropriate
-    if ds.source.polyco is not None:
-        polyco_data = ds.source.polyco.as_table()
-        polyco_hdu = fits.BinTableHDU(data=polyco_data)
-        polyco_hdu.header['tunit7'] = 'MHz'
-        polyco_hdu.header['tunit11'] = 'Hz'
-        polyco_hdu.header['extname'] = 'POLYCO'
-        polyco_hdu.header['extver'] = 1
-        
-        for key, value in comments['polyco'].items():
-            polyco_hdu.header.comments[key] = value
-        
-        hdus.append(polyco_hdu)
+    return t2predict_hdu
+
+def construct_polyco_hdu(ds):
+    '''
+    Construct Polyco HDU
+    '''
+    polyco_data = ds.source.polyco.as_table()
+    polyco_hdu = fits.BinTableHDU(data=polyco_data)
+    polyco_hdu.header['tunit7'] = 'MHz'
+    polyco_hdu.header['tunit11'] = 'Hz'
+    polyco_hdu.header['extname'] = 'POLYCO'
+    polyco_hdu.header['extver'] = 1
     
-    # Construct History HDU
+    for key, value in comments['polyco'].items():
+        polyco_hdu.header.comments[key] = value
+    
+    return polyco_hdu
+
+def construct_history_hdu(ds):
+    '''
+    Construct History HDU
+    '''
     table = ds.history.as_table()
     history_hdu = fits.BinTableHDU(data=table)
     history_hdu.header['tunit9'] = 's'
@@ -123,9 +145,12 @@ def to_hdulist(ds):
     for key, value in comments['history'].items():
         history_hdu.header.comments[key] = value
     
-    hdus.append(history_hdu)
-    
-    # Construct Subintegration HDU
+    return history_hdu
+
+def construct_subint_hdu(ds):
+    '''
+    Construct Subintegration HDU
+    '''
     if hasattr(ds, "ra") and hasattr(ds, "dec"):
         ra = ds.ra
         dec = ds.dec
@@ -200,7 +225,7 @@ def to_hdulist(ds):
     
     subint_hdu = fits.BinTableHDU(data=subint_data)
     
-    subint_header_cards = {
+    header_cards = {
         'int_type': ds.time_var,
         'int_unit': ds.time_unit,
         'scale': ds.flux_unit,
@@ -242,13 +267,10 @@ def to_hdulist(ds):
         'extver': 1,
     }
     
-    for key, value in subint_header_cards.items():
+    for key, value in header_cards.items():
         subint_hdu.header[key] = value
     
     for key, value in comments['subint'].items():
         subint_hdu.header.comments[key] = value
     
-    hdus.append(subint_hdu)
-
-    
-    return fits.HDUList(hdus)
+    return subint_hdu
