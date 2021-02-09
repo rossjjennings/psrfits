@@ -162,7 +162,7 @@ def construct_subint_hdu(ds):
         glon = np.full_like(ds.time, l_val)
         glat = np.full_like(ds.time, b_val)
     
-    data = np.array([getattr(ds, pol) for pol in get_pols(ds)])
+    data = np.array([getattr(ds, pol).data for pol in get_pols(ds)])
     data = np.swapaxes(data, 0, 1)
     mins = np.min(data, axis=-1)
     maxes = np.max(data, axis=-1)
