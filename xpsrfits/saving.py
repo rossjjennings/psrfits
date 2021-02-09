@@ -17,9 +17,6 @@ def to_hdulist(ds):
     '''
     Convert an xpsrfits dataset to a FITS HDU list for saving.
     '''
-    base_dir = os.path.dirname(__file__)
-    comments_file = os.path.join(base_dir, "standard-comments.toml")
-    comments = toml.load(comments_file)
     hdus = []
     hdus.append(construct_primary_hdu(ds))
     hdus.append(construct_history_hdu(ds))
@@ -72,9 +69,7 @@ def construct_primary_hdu(ds):
     
     for key, value in header_cards.items():
         primary_hdu.header[key] = value
-    
-    for key, value in comments['primary'].items():
-        primary_hdu.header.comments[key] = value
+    add_comments('primary', primary_hdu.header)
     
     return primary_hdu
 
@@ -89,9 +84,7 @@ def construct_psrparam_hdu(ds):
     psrparam_hdu = fits.BinTableHDU(data=param_data)
     psrparam_hdu.header['extname'] = 'PSRPARAM'
     psrparam_hdu.header['extver'] = 1
-    
-    for key, value in comments['psrparam'].items():
-        psrparam_hdu.header.comments[key] = value
+    add_comments('psrparam', psrparam_hdu.header)
     
     return psrparam_hdu
 
@@ -106,9 +99,7 @@ def construct_t2predict_hdu(ds):
     t2predict_hdu = fits.BinTableHDU(data=predictor_data)
     t2predict_hdu.header['extname'] = 'T2PREDICT'
     t2predict_hdu.header['extver'] = 1
-    
-    for key, value in comments['t2predict'].items():
-        psrparam_hdu.header.comments[key] = value
+    add_comments('t2predict', t2predict_hdu.header)
     
     return t2predict_hdu
 
@@ -122,9 +113,7 @@ def construct_polyco_hdu(ds):
     polyco_hdu.header['tunit11'] = 'Hz'
     polyco_hdu.header['extname'] = 'POLYCO'
     polyco_hdu.header['extver'] = 1
-    
-    for key, value in comments['polyco'].items():
-        polyco_hdu.header.comments[key] = value
+    add_comments('polyco', polyco_hdu.header)
     
     return polyco_hdu
 
@@ -141,9 +130,7 @@ def construct_history_hdu(ds):
     history_hdu.header['tunit14'] = 'rad'
     history_hdu.header['extname'] = 'HISTORY'
     history_hdu.header['extver'] = 1
-    
-    for key, value in comments['history'].items():
-        history_hdu.header.comments[key] = value
+    add_comments('history', history_hdu.header)
     
     return history_hdu
 
@@ -221,7 +208,6 @@ def construct_subint_hdu(ds):
                 ('DATA', '>f8', (ds.n_polns, ds.freq.size, ds.phase.size)),
             ]),
         )
-        
     
     subint_hdu = fits.BinTableHDU(data=subint_data)
     
@@ -269,8 +255,14 @@ def construct_subint_hdu(ds):
     
     for key, value in header_cards.items():
         subint_hdu.header[key] = value
-    
-    for key, value in comments['subint'].items():
-        subint_hdu.header.comments[key] = value
+    add_comments('subint', subint_hdu.header)
     
     return subint_hdu
+
+def add_comments(hdu_name, header):
+    base_dir = os.path.dirname(__file__)
+    comments_file = os.path.join(base_dir, "standard-comments.toml")
+    comments = toml.load(comments_file)
+    for key, value in comments[hdu_name].items():
+        header.comments[key] = value
+    
