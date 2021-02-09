@@ -160,6 +160,14 @@ def construct_subint_hdu(ds):
     
     data = np.array([getattr(ds, pol) for pol in get_pols(ds)])
     data = np.swapaxes(data, 0, 1)
+    mins = np.min(data, axis=-1)
+    maxes = np.max(data, axis=-1)
+    mant, expt = np.frexp(maxes - mins)
+    offsets = (mins + maxes)/2.
+    scales = 2.**(expt-16)
+    data -= offsets[..., np.newaxis]
+    data /= scales[..., np.newaxis]
+    data = np.rint(data).astype('i2')
     
     coords = ds.observation.coords
     subint_data = np.rec.fromarrays(
@@ -181,8 +189,8 @@ def construct_subint_hdu(ds):
             ds.aux_rm if hasattr(ds, "aux_rm") else np.zeros_like(ds.time),
             np.tile(ds.freq, ds.time.size).reshape(ds.time.size, -1),
             ds.weights,
-            np.zeros((ds.time.size, ds.n_polns*ds.freq.size)),
-            np.ones((ds.time.size, ds.n_polns*ds.freq.size)),
+            offsets.reshape(ds.time.size, -1),
+            scales.reshape(ds.time.size, -1),
             data,
         ],
         dtype=(np.record, [
@@ -205,7 +213,7 @@ def construct_subint_hdu(ds):
                 ('DAT_WTS', '>f4', (ds.freq.size,)),
                 ('DAT_OFFS', '>f4', (ds.n_polns*ds.freq.size,)),
                 ('DAT_SCL', '>f4', (ds.n_polns*ds.freq.size,)),
-                ('DATA', '>f8', (ds.n_polns, ds.freq.size, ds.phase.size)),
+                ('DATA', '>i2', (ds.n_polns, ds.freq.size, ds.phase.size)),
             ]),
         )
     
