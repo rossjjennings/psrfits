@@ -11,7 +11,7 @@ class Backend(AttrCollection):
             name = header['backend'],
             config = maybe_missing(header['beconfig']),
             phase = header['be_phase'],
-            dcc = header['be_dcc'],
+            dcc = bool(header['be_dcc']),
             delay = header['be_delay'],
             cycle_time = header['tcycle'],
         )
@@ -29,7 +29,7 @@ class Backend(AttrCollection):
             'backend': self.name,
             'beconfig': if_missing('N/A', self.config),
             'be_phase': self.phase,
-            'be_dcc': self.dcc,
+            'be_dcc': int(self.dcc),
             'be_delay': self.delay,
             'tcycle': self.cycle_time,
         }
