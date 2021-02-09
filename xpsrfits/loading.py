@@ -12,7 +12,7 @@ from xpsrfits.polarization import pol_split, get_pols, pscrunch, to_stokes
 from xpsrfits.dispersion import dedisperse
 from xpsrfits.baseline import remove_baseline
 
-def ingest(filename, weight=True, DM=None, wcfreq=False,
+def ingest(filename, weight=False, DM=None, wcfreq=False,
            baseline_method='offpulse', output_polns='IQUV'):
     '''
     Load a PSRFITS file, dedisperse and remove the baseline.
@@ -34,9 +34,9 @@ def read(filename):
         ds = to_dataset(hdulist)
     return ds
 
-def load(filename, weight=True):
+def load(filename, weight=False):
     ds = read(filename)
-    ds = unpack(ds)
+    ds = unpack(ds, weight)
     return ds
 
 def to_dataset(hdulist):
@@ -141,7 +141,7 @@ def to_dataset(hdulist):
     
     return ds
 
-def unpack(ds, weight=True):
+def unpack(ds, weight=False):
     '''
     Convert a dataset into meaningful units by apply the scaling, offset, and,
     if specified by the `weight` parameter, the weights, given in the file.
