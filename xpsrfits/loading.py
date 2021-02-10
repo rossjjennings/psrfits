@@ -11,6 +11,7 @@ from xpsrfits.attrs.attrcollection import maybe_missing
 from xpsrfits.polarization import pol_split, get_pols, pscrunch, to_stokes
 from xpsrfits.dispersion import dedisperse
 from xpsrfits.baseline import remove_baseline
+from xpsrfits.uniform import uniformize
 
 def ingest(filename, weight=False, DM=None, wcfreq=False,
            baseline_method='offpulse', output_polns='IQUV'):
@@ -34,12 +35,13 @@ def read(filename):
         ds = to_dataset(hdulist)
     return ds
 
-def load(filename, weight=False):
-    ds = read(filename)
+def load(filename, weight=False, uniformize_freqs=True):
+    with fits.open(filename) as hdulist:
+        ds = to_dataset(hdulist, uniformize_freqs)
     ds = unpack(ds, weight)
     return ds
 
-def to_dataset(hdulist):
+def to_dataset(hdulist, uniformize_freqs=False):
     '''
     Convert a FITS HDUList object into an xarray Dataset.
     '''
@@ -49,7 +51,7 @@ def to_dataset(hdulist):
     
     data = subint_hdu.data['data']
     data_vars = pol_split(data, subint_hdu.header['pol_type'])
-    coords = get_coords(hdulist)
+    coords = get_coords(hdulist, uniformize_freqs)
     
     # Add data vars
     duration = subint_hdu.data['tsubint']
@@ -177,7 +179,7 @@ def unpack(ds, weight=False):
     
     return Dataset(new_data_vars, ds.coords, new_attrs)
 
-def get_coords(hdulist):
+def get_coords(hdulist, uniformize_freqs):
     '''
     Get the time, frequency, and phase coordinates from a PSRFITS file.
     '''
@@ -189,9 +191,18 @@ def get_coords(hdulist):
     
     dat_freq = subint_hdu.data['dat_freq']
     freq = np.atleast_1d(dat_freq[0])
-    # All other rows should be the same
-    if not all(np.all(row == freq) for row in dat_freq):
-        msg = 'Not all frequencies match'
+    channel_bandwidth = subint_hdu.header['chan_bw']
+    bandwidth = primary_hdu.header['obsbw']
+    if uniformize_freqs:
+        # Undo effects of truncation to nearest 1 kHz (introduced by PSRCHIVE)
+        freq = uniformize(freq, channel_bandwidth)
+    # (Uniformized) first row should match everything to within 1 kHz
+    if np.any(np.abs(dat_freq - freq) > 0.001):
+        msg = 'Not all frequencies match within tolerance.'
+        warnings.warn(msg, RuntimeWarning)
+    # Difference between first and last frequencies should equal bandwidth
+    if freq[-1] - freq[0] + channel_bandwidth != bandwidth:
+        msg = 'Frequencies do not match bandwidth. Band edges may be missing.'
         warnings.warn(msg, RuntimeWarning)
     
     nbin = history_hdu.data['nbin'][-1]
