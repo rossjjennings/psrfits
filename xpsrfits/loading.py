@@ -201,7 +201,8 @@ def get_coords(hdulist, uniformize_freqs):
         msg = 'Not all frequencies match within tolerance.'
         warnings.warn(msg, RuntimeWarning)
     # Difference between first and last frequencies should equal bandwidth
-    if freq[-1] - freq[0] + channel_bandwidth != bandwidth:
+    discrepancy = np.abs(freq[-1] - freq[0] + channel_bandwidth - bandwidth)
+    if discrepancy > 0.001 or (uniformize_freqs and discrepancy != 0):
         msg = 'Frequencies do not match bandwidth. Band edges may be missing.'
         warnings.warn(msg, RuntimeWarning)
     
