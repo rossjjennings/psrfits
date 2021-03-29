@@ -65,45 +65,81 @@ def to_dataset(hdulist, uniformize_freqs=False):
     if not all(index == 0):
         data_vars['index'] = (['time'], index)
     
-    lst = subint_hdu.data['lst_sub']
-    data_vars['lst'] = (['time'], lst)
+    try:
+        lst = subint_hdu.data['lst_sub']
+    except KeyError:
+        pass
+    else:
+        data_vars['lst'] = (['time'], lst)
     
-    ra = subint_hdu.data['ra_sub']
-    dec = subint_hdu.data['dec_sub']
-    if not (all(ra == ra[0]) and all(dec == dec[0])):
-        data_vars['ra'] = (['time'], ra)
-        data_vars['dec'] = (['time'], dec)
+    try:
+        ra = subint_hdu.data['ra_sub']
+        dec = subint_hdu.data['dec_sub']
+    except KeyError:
+        pass
+    else:
+        if not (all(ra == ra[0]) and all(dec == dec[0])):
+            data_vars['ra'] = (['time'], ra)
+            data_vars['dec'] = (['time'], dec)
     
-    glon = subint_hdu.data['glon_sub']
-    glat = subint_hdu.data['glat_sub']
-    if not (all(glon == glon[0]) and all(glat == glat[0])):
-        data_vars['glon'] = (['time'], glon)
-        data_vars['glon'] = (['time'], glat)
+    try:
+        glon = subint_hdu.data['glon_sub']
+        glat = subint_hdu.data['glat_sub']
+    except KeyError:
+        pass
+    else:
+        if not (all(glon == glon[0]) and all(glat == glat[0])):
+            data_vars['glon'] = (['time'], glon)
+            data_vars['glon'] = (['time'], glat)
     
-    feed_angle = subint_hdu.data['fd_ang']
-    if not all(feed_angle == 0):
-        data_vars['feed_angle'] = (['time'], feed_angle)
+    try:
+        feed_angle = subint_hdu.data['fd_ang']
+    except KeyError:
+        pass
+    else:
+        if not all(feed_angle == 0):
+            data_vars['feed_angle'] = (['time'], feed_angle)
     
-    pos_angle = subint_hdu.data['pos_ang']
-    if not all(pos_angle == 0):
-        data_vars['pos_angle'] = (['time'], pos_angle)
+    try:
+        pos_angle = subint_hdu.data['pos_ang']
+    except KeyError:
+        pass
+    else:
+        if not all(pos_angle == 0):
+            data_vars['pos_angle'] = (['time'], pos_angle)
     
-    par_angle = subint_hdu.data['par_ang']
-    if not all(par_angle == 0):
-        data_vars['par_angle'] = (['time'], par_angle)
+    try:
+        par_angle = subint_hdu.data['par_ang']
+    except KeyError:
+        pass
+    else:
+        if not all(par_angle == 0):
+            data_vars['par_angle'] = (['time'], par_angle)
     
-    az = subint_hdu.data['tel_az']
-    zen = subint_hdu.data['tel_zen']
-    data_vars['az'] = (['time'], az)
-    data_vars['zen'] = (['time'], zen)
+    try:
+        az = subint_hdu.data['tel_az']
+        zen = subint_hdu.data['tel_zen']
+    except KeyError:
+        pass
+    else:
+        data_vars['az'] = (['time'], az)
+        data_vars['zen'] = (['time'], zen)
     
-    aux_dm = subint_hdu.data['aux_dm']
-    if not all(aux_dm == 0):
-        data_vars['aux_dm'] = (['time'], aux_dm)
+    try:
+        aux_dm = subint_hdu.data['aux_dm']
+    except KeyError:
+        pass
+    else:
+        if not all(aux_dm == 0):
+            data_vars['aux_dm'] = (['time'], aux_dm)
     
-    aux_rm = subint_hdu.data['aux_rm']
-    if not all(aux_rm == 0):
-        data_vars['aux_rm'] = (['time'], aux_rm)
+    try:
+        aux_rm = subint_hdu.data['aux_rm']
+    except KeyError:
+        pass
+    else:
+        if not all(aux_rm == 0):
+            data_vars['aux_rm'] = (['time'], aux_rm)
     
     start_time = Time(primary_hdu.header['stt_imjd'], format='mjd')
     start_time.format = 'isot'

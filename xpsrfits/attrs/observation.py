@@ -25,7 +25,10 @@ class Observation(AttrCollection):
     
     @classmethod
     def from_header(cls, header):
-        date = Time(header['date-obs'])
+        date = maybe_missing(header['date-obs'])
+        if date is not None:
+            print(date)
+            date = Time(date)
         coord_mode = header['coord_md']
         equinox = header['equinox']
         
@@ -49,46 +52,76 @@ class Observation(AttrCollection):
             )
         
         if coord_mode == 'J2000':
-            start_coords = SkyCoord(
-                ra=header['stt_crd1'],
-                dec=header['stt_crd2'],
-                unit=(u.hourangle, u.deg),
-                frame='icrs',
-            )
-            stop_coords = SkyCoord(
-                ra=header['stp_crd1'],
-                dec=header['stp_crd2'],
-                unit=(u.hourangle, u.deg),
-                frame='icrs',
-            )
+            start_ra = maybe_missing(header['stt_crd1'])
+            start_dec = maybe_missing(header['stt_crd2'])
+            if start_ra is not None and start_dec is not None:
+                start_coords = SkyCoord(
+                    ra=start_ra,
+                    dec=start_ra,
+                    unit=(u.hourangle, u.deg),
+                    frame='icrs',
+                )
+            else:
+                start_coords = None
+            stop_ra = maybe_missing(header['stp_crd1'])
+            stop_dec = maybe_missing(header['stp_crd2'])
+            if stop_ra is not None and stop_dec is not None:
+                stop_coords = SkyCoord(
+                    ra=stop_ra,
+                    dec=stop_dec,
+                    unit=(u.hourangle, u.deg),
+                    frame='icrs',
+                )
+            else:
+                stop_coords = None
         elif coord_mode == 'GALACTIC':
             warnings.warn("Interpreting galactic coordinates using astropy.coordinates.Galactic")
-            start_coords = SkyCoord(
-                lon=header['stt_crd1'],
-                lat=header['stt_crd2'],
-                unit=(u.deg, u.deg),
-                frame='galactic',
-            )
-            stop_coords = SkyCoord(
-                lon=header['stp_crd1'],
-                lat=header['stp_crd2'],
-                unit=(u.deg, u.deg),
-                frame='galactic',
-            )
+            start_lon = maybe_missing(header['stt_crd1'])
+            start_lat = maybe_missing(header['stt_crd2'])
+            if start_lon is not None and start_lat is not None:
+                start_coords = SkyCoord(
+                    lon=start_lon,
+                    lat=start_lat,
+                    unit=(u.deg, u.deg),
+                    frame='galactic',
+                )
+            else:
+                start_coords = None
+            stop_lon = maybe_missing(header['stp_crd1'])
+            stop_lat = maybe_missing(header['stp_crd2'])
+            if stop_lon is not None and stop_lat is not None:
+                stop_coords = SkyCoord(
+                    lon=stop_lon,
+                    lat=stop_lat,
+                    unit=(u.deg, u.deg),
+                    frame='galactic',
+                )
+            else:
+                stop_coords = None
         elif coord_mode == 'ECLIPTIC':
             warnings.warn("Interpreting ecliptic coordinates using IERS2010 obliquity")
-            start_coords = SkyCoord(
-                lon=header['stt_crd1'],
-                lat=header['stt_crd2'],
-                unit=(u.deg, u.deg),
-                frame='pulsarecliptic',
-            )
-            stop_coords = SkyCoord(
-                lon=header['stp_crd1'],
-                lat=header['stp_crd2'],
-                unit=(u.deg, u.deg),
-                frame='pulsarecliptic',
-            )
+            start_lon = maybe_missing(header['stt_crd1'])
+            start_lat = maybe_missing(header['stp_crd1'])
+            if start_lat is not None and start_lon is not None:
+                start_coords = SkyCoord(
+                    lon=start_lon,
+                    lat=start_lat,
+                    unit=(u.deg, u.deg),
+                    frame='pulsarecliptic',
+                )
+            else:
+                start_coords = None
+            stop_lon = maybe_missing(header['stp_crd1'])
+            stop_lat = maybe_missing(header['stp_crd2'])
+            if stop_lon is not None and start_lon is not None:
+                stop_coords = SkyCoord(
+                    lon=stop_lon,
+                    lat=stop_lat,
+                    unit=(u.deg, u.deg),
+                    frame='pulsarecliptic',
+                )
+            else:
+                stop_coords = None
         
         return cls(
             date = date,
@@ -118,22 +151,42 @@ class Observation(AttrCollection):
             or self.stop_coords.frame.__class__.__name__ != 'ICRS'):
             warnings.warn("Converting coordinates to J2000 for output")
         coords_icrs = self.coords.transform_to(ICRS)
-        start_coords_icrs = self.start_coords.transform_to(ICRS)
-        stop_coords_icrs = self.stop_coords.transform_to(ICRS)
+        
+        if self.start_coords is None:
+            start_coord1_str = 'UNSET'
+            start_coord2_str = 'UNSET'
+        else:
+            start_coords_icrs = self.start_coords.transform_to(ICRS)
+            start_coord1_str = start_coords_icrs.ra.to_string(unit=u.hourangle, sep=':')
+            start_coord2_str = start_coords_icrs.dec.to_string(unit=u.deg, sep=':')
+        
+        if self.stop_coords is None:
+            stop_coord1_str = 'UNSET'
+            stop_coord2_str = 'UNSET'
+        else:
+            stop_coords_icrs = self.stop_coords.transform_to(ICRS)
+            stop_coord1_str = stop_coords_icrs.ra.to_string(unit=u.hourangle, sep=':')
+            stop_coord2_str = stop_coords_icrs.dec.to_string(unit=u.deg, sep=':')
+        
+        if self.date is None:
+            date_str = 'UNSETTUNSET'
+        else:
+            date_str = datetime.strftime(self.date.datetime, '%Y-%m-%dT%H:%M:%S')
+        
         return {
             'observer': self.observer,
             'projid': self.project_id,
             'obs_mode': self.mode,
-            'date-obs': datetime.strftime(self.date.datetime, '%Y-%m-%dT%H:%M:%S'),
+            'date-obs': date_str,
             'coord_md': 'J2000',
             'equinox': '2000.0',
             'ra': coords_icrs.ra.to_string(unit=u.hourangle, sep=':'),
             'dec': coords_icrs.dec.to_string(unit=u.deg, sep=':'),
-            'stt_crd1': start_coords_icrs.ra.to_string(unit=u.hourangle, sep=':'),
-            'stt_crd2': start_coords_icrs.dec.to_string(unit=u.deg, sep=':'),
+            'stt_crd1': start_coord1_str,
+            'stt_crd2': start_coord2_str,
             'trk_mode': self.track_mode,
-            'stp_crd1': stop_coords_icrs.ra.to_string(unit=u.hourangle, sep=':'),
-            'stp_crd2': stop_coords_icrs.dec.to_string(unit=u.deg, sep=':'),
+            'stp_crd1': stop_coord1_str,
+            'stp_crd2': stop_coord2_str,
             'scanlen': if_missing('*', self.scan_length),
             'fd_mode': self.feed_mode,
             'fa_req': self.feed_angle,

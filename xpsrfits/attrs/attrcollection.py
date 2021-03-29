@@ -12,7 +12,7 @@ class AttrCollection:
         return fmt_items(mapping)
 
 def maybe_missing(item):
-    if item in ['', '*', 'N/A', 'UNSET', 'UNKNOWN', 'NONE']:
+    if item in ['', '*', 'N/A', 'UNSET', 'UNSETTUNSET', 'UNKNOWN', 'NONE']:
         return None
     else:
         return item
