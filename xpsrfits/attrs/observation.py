@@ -27,7 +27,6 @@ class Observation(AttrCollection):
     def from_header(cls, header):
         date = maybe_missing(header['date-obs'])
         if date is not None:
-            print(date)
             date = Time(date)
         coord_mode = header['coord_md']
         equinox = header['equinox']
