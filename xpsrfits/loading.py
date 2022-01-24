@@ -201,9 +201,9 @@ def unpack(ds, weight=False):
     
     new_data_vars = dict(ds.data_vars)
     for pol in get_pols(ds):
-        data = ds.data_vars[pol]
-        scale = scales[pol][-1].reshape(nsub, nchan, 1)
-        offset = offsets[pol][-1].reshape(nsub, nchan, 1)
+        data = ds.data_vars[pol].data
+        scale = np.array(scales[pol][-1]).reshape(nsub, nchan, 1)
+        offset = np.array(offsets[pol][-1]).reshape(nsub, nchan, 1)
         unpacked_data = scale*data + offset
         if weight:
             unpacked_data = weights*unpacked_data

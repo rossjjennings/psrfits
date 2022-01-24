@@ -3,7 +3,7 @@ from astropy.coordinates import SkyCoord
 from textwrap import indent
 
 def fmt_items(mapping):
-    max_len = max(len(name) for name in mapping if mapping[name] is not None)
+    max_len = max((len(name) for name in mapping if mapping[name] is not None), default=0)
     description = ""
     for name, item in mapping.items():
         if item is not None:

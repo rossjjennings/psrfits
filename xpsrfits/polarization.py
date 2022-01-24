@@ -10,23 +10,23 @@ def pol_split(data, pol_type):
     '''
     if pol_type in ['AA+BB', 'INTEN']:
         I, = np.swapaxes(data, 0, 1)
-        data_vars = {'I': (['time', 'freq', 'phase'], I)}
+        data_vars = {'I': (['time', 'freq', 'phase'], I.data)}
     elif pol_type == 'AABB':
         AA, BB = np.swapaxes(data, 0, 1)
-        data_vars = {'AA': (['time', 'freq', 'phase'], AA),
-                     'BB': (['time', 'freq', 'phase'], BB)}
+        data_vars = {'AA': (['time', 'freq', 'phase'], AA.data),
+                     'BB': (['time', 'freq', 'phase'], BB.data)}
     elif pol_type == 'AABBCRCI':
         AA, BB, CR, CI = np.swapaxes(data, 0, 1)
-        data_vars = {'AA': (['time', 'freq', 'phase'], AA),
-                     'BB': (['time', 'freq', 'phase'], BB),
-                     'CR': (['time', 'freq', 'phase'], CR),
-                     'CI': (['time', 'freq', 'phase'], CI)}
+        data_vars = {'AA': (['time', 'freq', 'phase'], AA.data),
+                     'BB': (['time', 'freq', 'phase'], BB.data),
+                     'CR': (['time', 'freq', 'phase'], CR.data),
+                     'CI': (['time', 'freq', 'phase'], CI.data)}
     elif pol_type == 'IQUV':
         I, Q, U, V = np.swapaxes(data, 0, 1)
-        data_vars = {'I': (['time', 'freq', 'phase'], I),
-                     'Q': (['time', 'freq', 'phase'], Q),
-                     'U': (['time', 'freq', 'phase'], U),
-                     'V': (['time', 'freq', 'phase'], V)}
+        data_vars = {'I': (['time', 'freq', 'phase'], I.data),
+                     'Q': (['time', 'freq', 'phase'], Q.data),
+                     'U': (['time', 'freq', 'phase'], U.data),
+                     'V': (['time', 'freq', 'phase'], V.data)}
     else:
         raise ValueError("Polarization type '{}' not recognized.".format(pol_type))
     
