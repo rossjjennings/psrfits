@@ -8,7 +8,7 @@ class Dataset:
     
     def __repr__(self):
         lines = repr(self._ds).split('\n')
-        lines[0] = '<xpsrfits.Dataset>'
+        lines[0] = '<psrfits.Dataset>'
         return '\n'.join(lines)
     
     def __getattr__(self, name):

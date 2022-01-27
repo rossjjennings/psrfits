@@ -1,6 +1,6 @@
 import numpy as np
 import xarray as xr
-from xpsrfits.dataset import Dataset
+from psrfits.dataset import Dataset
 
 def pol_split(data, pol_type):
     '''

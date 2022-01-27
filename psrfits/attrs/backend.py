@@ -20,7 +20,7 @@ class Backend(AttrCollection):
         return f'<{self.name}>'
     
     def __repr__(self):
-        description = "<xpsrfits.Backend>\n"
+        description = "<psrfits.Backend>\n"
         description += indent(self._repr_items(), '    ')
         return description
     

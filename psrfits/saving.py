@@ -19,7 +19,7 @@ def save(filename, ds):
 
 def to_hdulist(ds):
     '''
-    Convert an xpsrfits dataset to a FITS HDU list for saving.
+    Convert an psrfits dataset to a FITS HDU list for saving.
     '''
     hdus = []
     hdus.append(construct_primary_hdu(ds))

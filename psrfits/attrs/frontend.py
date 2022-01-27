@@ -20,7 +20,7 @@ class Frontend(AttrCollection):
         return f'<{self.name}>'
     
     def __repr__(self):
-        description = "<xpsrfits.Frontend>\n"
+        description = "<psrfits.Frontend>\n"
         description += indent(self._repr_items(), '    ')
         return description
     

@@ -25,7 +25,7 @@ class Telescope(AttrCollection):
         return f'<{self.name}>'
     
     def __repr__(self):
-        description = "<xpsrfits.Telescope>\n"
+        description = "<psrfits.Telescope>\n"
         description += indent(self._repr_items(), '    ')
         return description
     

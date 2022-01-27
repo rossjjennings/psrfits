@@ -17,7 +17,7 @@ class History:
         return f"<History with {len(self.entries)} entries>"
     
     def __repr__(self):
-        description = "<xpsrfits.History>\nLatest entry:\n"
+        description = "<psrfits.History>\nLatest entry:\n"
         description += indent(self.entries[-1]._repr_items(), '    ')
         return description
     
@@ -171,6 +171,6 @@ class HistoryEntry(AttrCollection):
         return f"<HistoryEntry from {self.date}>"
     
     def __repr__(self):
-        description = "<xpsrfits.HistoryEntry>\n"
+        description = "<psrfits.HistoryEntry>\n"
         description += indent(self._repr_items(), '    ')
         return description

@@ -25,7 +25,7 @@ class Source(AttrCollection):
         return f'<{self.name}>'
     
     def __repr__(self):
-        description = "<xpsrfits.Source>\n"
+        description = "<psrfits.Source>\n"
         description += indent(self._repr_items(), '    ')
         return description
     

@@ -2,8 +2,8 @@ import numpy as np
 from numpy import pi, sin, cos, exp, log, sqrt
 from numpy.fft import rfft, irfft, rfftfreq
 import xarray as xr
-from xpsrfits.dataset import Dataset
-from xpsrfits.polarization import get_pols
+from psrfits.dataset import Dataset
+from psrfits.polarization import get_pols
 
 def fft_roll(a, shift):
     '''

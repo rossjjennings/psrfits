@@ -22,7 +22,7 @@ class Beam(AttrCollection):
             return f'<Beam {self.beam_id}>'
     
     def __repr__(self):
-        description = "<xpsrfits.Beam>\n"
+        description = "<psrfits.Beam>\n"
         description += indent(self._repr_items(), '    ')
         return description
     

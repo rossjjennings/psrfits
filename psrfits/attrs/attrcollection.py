@@ -1,4 +1,4 @@
-from xpsrfits.formatting import fmt_items
+from psrfits.formatting import fmt_items
 
 class AttrCollection:
     __slots__ = tuple()

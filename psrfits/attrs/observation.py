@@ -140,7 +140,7 @@ class Observation(AttrCollection):
         return f'<{self.mode} mode observation>'
     
     def __repr__(self):
-        description = "<xpsrfits.Observation>\n"
+        description = "<psrfits.Observation>\n"
         description += indent(self._repr_items(), '    ')
         return description
     

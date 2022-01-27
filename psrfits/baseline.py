@@ -1,7 +1,7 @@
 import numpy as np
 import xarray as xr
-from xpsrfits.dataset import Dataset
-from xpsrfits.polarization import get_pols
+from psrfits.dataset import Dataset
+from psrfits.polarization import get_pols
 
 def remove_baseline(ds, method='median'):
     '''

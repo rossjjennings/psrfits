@@ -22,7 +22,7 @@ class Calibrator(AttrCollection):
             return f'<{self.mode} mode calibrator>'
     
     def __repr__(self):
-        description = "<xpsrfits.Calibrator>\n"
+        description = "<psrfits.Calibrator>\n"
         description += indent(self._repr_items(), '    ')
         return description
     

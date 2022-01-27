@@ -5,13 +5,13 @@ from astropy.io import fits
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, EarthLocation, Longitude
 import astropy.units as u
-from xpsrfits.attrs import *
-from xpsrfits.dataset import Dataset
-from xpsrfits.attrs.attrcollection import maybe_missing
-from xpsrfits.polarization import pol_split, get_pols, pscrunch, to_stokes
-from xpsrfits.dispersion import dedisperse
-from xpsrfits.baseline import remove_baseline
-from xpsrfits.uniform import uniformize
+from psrfits.attrs import *
+from psrfits.dataset import Dataset
+from psrfits.attrs.attrcollection import maybe_missing
+from psrfits.polarization import pol_split, get_pols, pscrunch, to_stokes
+from psrfits.dispersion import dedisperse
+from psrfits.baseline import remove_baseline
+from psrfits.uniform import uniformize
 
 def ingest(filename, weight=False, DM=None, wcfreq=False,
            baseline_method='offpulse', output_polns='IQUV'):

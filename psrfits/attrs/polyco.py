@@ -17,7 +17,7 @@ class Polyco:
         return '<Polyco>'
     
     def __repr__(self):
-        description = "<xpsrfits.Polyco>\nLatest entry:\n"
+        description = "<psrfits.Polyco>\nLatest entry:\n"
         description += indent(self.entries[-1]._repr_items(), '    ')
         return description
     
@@ -113,7 +113,7 @@ class PolycoEntry(AttrCollection):
         return f'<PolycoEntry>'
     
     def __repr__(self):
-        description = "<xpsrfits.PolycoEntry>\n"
+        description = "<psrfits.PolycoEntry>\n"
         description += indent(self._repr_items(), '    ')
         return description
     
