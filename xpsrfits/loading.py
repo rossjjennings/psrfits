@@ -90,7 +90,7 @@ def to_dataset(hdulist, uniformize_freqs=False):
     else:
         if not (all(glon == glon[0]) and all(glat == glat[0])):
             data_vars['glon'] = (['time'], glon)
-            data_vars['glon'] = (['time'], glat)
+            data_vars['glat'] = (['time'], glat)
     
     try:
         feed_angle = subint_hdu.data['fd_ang']
