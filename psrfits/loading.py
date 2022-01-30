@@ -1,5 +1,4 @@
 import numpy as np
-import xarray as xr
 import warnings
 from astropy.io import fits
 from astropy.time import Time
@@ -29,7 +28,7 @@ def ingest(filename, weight=False, DM=None, wcfreq=False,
 
 def read(filename):
     '''
-    Open a PSRFITS file and load the contents into an xarray Dataset.
+    Open a PSRFITS file and load the contents into a Dataset.
     '''
     with fits.open(filename) as hdulist:
         ds = to_dataset(hdulist)
@@ -43,7 +42,7 @@ def load(filename, weight=False, uniformize_freqs=True):
 
 def to_dataset(hdulist, uniformize_freqs=False):
     '''
-    Convert a FITS HDUList object into an xarray Dataset.
+    Convert a FITS HDUList object into an in-memory Dataset object.
     '''
     primary_hdu = hdulist['primary']
     history_hdu = hdulist['history']
@@ -197,11 +196,11 @@ def unpack(ds, weight=False):
     scales = pol_split(scales, ds.pol_type)
     offsets = ds.offset.reshape(nsub, npol, nchan)
     offsets = pol_split(offsets, ds.pol_type)
-    weights = ds.weights.data.reshape(nsub, nchan, 1)
+    weights = ds.weights.reshape(nsub, nchan, 1)
     
     new_data_vars = dict(ds.data_vars)
     for pol in get_pols(ds):
-        data = ds.data_vars[pol].data
+        data = ds.data_vars[pol][-1]
         scale = np.array(scales[pol][-1]).reshape(nsub, nchan, 1)
         offset = np.array(offsets[pol][-1]).reshape(nsub, nchan, 1)
         unpacked_data = scale*data + offset

@@ -1,32 +1,31 @@
 import numpy as np
-import xarray as xr
 from psrfits.dataset import Dataset
 
 def pol_split(data, pol_type):
     '''
     Split a PSRFITS dataset into variables representing the polarizations.
     Return the result as a dictionary of data variables suitable for 
-    constructing an xarray Dataset.
+    constructing a Dataset.
     '''
     if pol_type in ['AA+BB', 'INTEN']:
         I, = np.swapaxes(data, 0, 1)
-        data_vars = {'I': (['time', 'freq', 'phase'], I.data)}
+        data_vars = {'I': (['time', 'freq', 'phase'], I)}
     elif pol_type == 'AABB':
         AA, BB = np.swapaxes(data, 0, 1)
-        data_vars = {'AA': (['time', 'freq', 'phase'], AA.data),
-                     'BB': (['time', 'freq', 'phase'], BB.data)}
+        data_vars = {'AA': (['time', 'freq', 'phase'], AA),
+                     'BB': (['time', 'freq', 'phase'], BB)}
     elif pol_type == 'AABBCRCI':
         AA, BB, CR, CI = np.swapaxes(data, 0, 1)
-        data_vars = {'AA': (['time', 'freq', 'phase'], AA.data),
-                     'BB': (['time', 'freq', 'phase'], BB.data),
-                     'CR': (['time', 'freq', 'phase'], CR.data),
-                     'CI': (['time', 'freq', 'phase'], CI.data)}
+        data_vars = {'AA': (['time', 'freq', 'phase'], AA),
+                     'BB': (['time', 'freq', 'phase'], BB),
+                     'CR': (['time', 'freq', 'phase'], CR),
+                     'CI': (['time', 'freq', 'phase'], CI)}
     elif pol_type == 'IQUV':
         I, Q, U, V = np.swapaxes(data, 0, 1)
-        data_vars = {'I': (['time', 'freq', 'phase'], I.data),
-                     'Q': (['time', 'freq', 'phase'], Q.data),
-                     'U': (['time', 'freq', 'phase'], U.data),
-                     'V': (['time', 'freq', 'phase'], V.data)}
+        data_vars = {'I': (['time', 'freq', 'phase'], I),
+                     'Q': (['time', 'freq', 'phase'], Q),
+                     'U': (['time', 'freq', 'phase'], U),
+                     'V': (['time', 'freq', 'phase'], V)}
     else:
         raise ValueError("Polarization type '{}' not recognized.".format(pol_type))
     
@@ -55,9 +54,9 @@ def pscrunch(ds):
     for pol in get_pols(ds):
         del new_data_vars[pol]
     if ds.pol_type in ['AA+BB', 'INTEN', 'IQUV']:
-        new_data_vars['I'] = ds.I
+        new_data_vars['I'] = (['time', 'freq', 'phase'], ds.I)
     elif ds.pol_type in ['AABB', 'AABBCRCI']:
-        new_data_vars['I'] = ds.AA + ds.BB
+        new_data_vars['I'] = (['time', 'freq', 'phase'], ds.AA + ds.BB)
     else:
         raise ValueError("Polarization type '{}' not recognized.".format(ds.pol_type))
     new_attrs = ds.attrs.copy()
@@ -80,15 +79,15 @@ def to_stokes(ds):
     for pol in get_pols(ds):
         del new_data_vars[pol]
     if ds.frontend.feed_poln == 'LIN':
-        new_data_vars['I'] = ds.AA + ds.BB
-        new_data_vars['Q'] =  ds.AA - ds.BB
-        new_data_vars['U'] = 2*ds.CR
-        new_data_vars['V'] = 2*ds.CI
+        new_data_vars['I'] = (['time', 'freq', 'phase'], ds.AA + ds.BB)
+        new_data_vars['Q'] =  (['time', 'freq', 'phase'], ds.AA - ds.BB)
+        new_data_vars['U'] = (['time', 'freq', 'phase'], 2*ds.CR)
+        new_data_vars['V'] = (['time', 'freq', 'phase'], 2*ds.CI)
     elif ds.frontend.feed_poln == 'CIRC':
-        new_data_vars['I'] = ds.AA + ds.BB
-        new_data_vars['Q'] = 2*ds.CR
-        new_data_vars['U'] = 2*ds.CI
-        new_data_vars['V'] = ds.AA - ds.BB
+        new_data_vars['I'] = (['time', 'freq', 'phase'], ds.AA + ds.BB)
+        new_data_vars['Q'] = (['time', 'freq', 'phase'], 2*ds.CR)
+        new_data_vars['U'] = (['time', 'freq', 'phase'], 2*ds.CI)
+        new_data_vars['V'] = (['time', 'freq', 'phase'], ds.AA - ds.BB)
     new_attrs = ds.attrs.copy()
     new_attrs['pol_type'] = 'IQUV'
     return Dataset(new_data_vars, ds.coords, new_attrs)

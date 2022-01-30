@@ -1,5 +1,4 @@
 import numpy as np
-import xarray as xr
 import matplotlib.pyplot as plt
 
 def spec_plot(ds, arr, cmap='viridis', colorbar=False):

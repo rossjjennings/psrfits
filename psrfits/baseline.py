@@ -1,27 +1,26 @@
 import numpy as np
-import xarray as xr
 from psrfits.dataset import Dataset
 from psrfits.polarization import get_pols
 
-def remove_baseline(ds, method='median'):
+def remove_baseline(ds, method='offpulse'):
     '''
     Remove the frequency-dependent baseline from an observation.
     '''
     if method == 'offpulse':
         I = (ds.AA + ds.BB if ds.pol_type.startswith('AABB') else ds.I)
         size = ds.phase.size//8
-        profile = I.groupby('phase').mean(dim=...)
+        profile = I.mean(axis=(0, 1))
         opw = offpulse_window(profile, size)
     
     new_data_vars = dict(ds.data_vars)
     for pol in get_pols(ds):
-        arr = ds.data_vars[pol]
+        arr = ds.data_vars[pol][-1]
         if method == 'median':
-            baseline = arr.median(dim='phase')
+            baseline = np.median(arr, axis=-1)
         elif method == 'offpulse':
-            baseline = arr.isel(phase=opw).mean(dim='phase')
-        adjusted_arr = arr - baseline
-        new_data_vars.update({pol: adjusted_arr})
+            baseline = arr[:, :, opw].mean(axis=-1)
+        adjusted_arr = arr - baseline[:, :, np.newaxis]
+        new_data_vars.update({pol: (['time', 'freq', 'phase'], adjusted_arr)})
     
     return Dataset(new_data_vars, ds.coords, ds.attrs)
 
@@ -32,7 +31,7 @@ def offpulse_window(profile, size):
     minimizing the integral of the pulse profile.
     '''
     bins = np.arange(len(profile))
-    lower = np.argmin(rolling_sum(profile.values, size))
+    lower = np.argmin(rolling_sum(profile, size))
     upper = lower + size
     return np.logical_and(lower <= bins, bins < upper)
 

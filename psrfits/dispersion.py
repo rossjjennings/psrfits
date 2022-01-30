@@ -1,7 +1,6 @@
 import numpy as np
 from numpy import pi, sin, cos, exp, log, sqrt
 from numpy.fft import rfft, irfft, rfftfreq
-import xarray as xr
 from psrfits.dataset import Dataset
 from psrfits.polarization import get_pols
 
@@ -40,14 +39,14 @@ def dedisperse(ds, DM=None, weight_center_freq=False):
         center_freq = weighted_center_freq(ds)
     else:
         center_freq = ds.center_freq
-    time_delays = K*DM*(center_freq**-2 - ds.freq.values**-2)
+    time_delays = K*DM*(center_freq**-2 - ds.freq**-2)
     
     tbin = ds.time_per_bin
     bin_delays = time_delays/tbin
     
     new_data_vars = dict(ds.data_vars)
     for pol in get_pols(ds):
-        dedispersed_arr = fft_roll(ds.data_vars[pol].values, bin_delays)
+        dedispersed_arr = fft_roll(ds.data_vars[pol][-1], bin_delays)
         new_data_vars.update({pol: (['time', 'freq', 'phase'], dedispersed_arr)})
     
     return Dataset(new_data_vars, ds.coords, ds.attrs)

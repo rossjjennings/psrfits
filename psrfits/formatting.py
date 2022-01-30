@@ -22,7 +22,11 @@ def fmt_inline(item):
     else:
         item_str = str(item)
     lines = item_str.split('\n')
-    if len(lines) > 1 and not isinstance(item, np.ndarray):
+    if isinstance(item, np.ndarray) and len(item.shape) > 0:
+        dims = str(item.shape)
+        dims_dtype = dims + ' ' + str(item.dtype) + ' '
+        return dims_dtype + fmt_array(item, 65 - len(dims_dtype))
+    elif len(lines) > 1:
         return f'{lines[0]} [...]'
     else:
         return item_str
@@ -35,3 +39,42 @@ def fmt_skycoord(skycoord):
         component_names.remove('distance')
     values = ', '.join(f'{name}={getattr(skycoord, name):g}' for name in component_names)
     return f'<{class_name} ({frame_name}): {values}>'
+
+def fmt_element(elt):
+    if hasattr(elt, "dtype") and np.issubdtype(elt.dtype, np.floating):
+        return f"{elt.item():.4}"
+    else:
+        return str(elt)
+
+def fmt_array(array, max_width):
+    front = []
+    back = []
+    cols_remaining = max_width
+    front_idx = 0
+    back_idx = array.size - 1
+    while True:
+        # add something to the front
+        elt = array.flat[front_idx]
+        elt_str = fmt_element(elt)
+        cols_remaining -= (len(elt_str) + 1)
+        front_idx += 1
+        
+        if front_idx > back_idx:
+            return ' '.join(front) + ' ' + ' '.join(back[::-1])
+        elif cols_remaining < 3:
+            return ' '.join(front) + ' ... ' + ' '.join(back[::-1])
+        else:
+            front.append(elt_str)
+        
+        # add something to the back
+        elt = array.flat[back_idx]
+        elt_str = fmt_element(elt)
+        cols_remaining -= (len(elt_str) + 1)
+        back_idx -= 1
+        
+        if back_idx < front_idx:
+            return ' '.join(front) + ' ' + ' '.join(back[::-1])
+        elif cols_remaining < 3:
+            return ' '.join(front) + ' ... ' + ' '.join(back[::-1])
+        else:
+            back.append(elt_str)

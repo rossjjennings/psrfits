@@ -1,5 +1,4 @@
 import numpy as np
-import xarray as xr
 from pint.models import get_model
 import tempfile
 
