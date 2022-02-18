@@ -26,7 +26,7 @@ def to_hdulist(ds):
     hdus.append(construct_psrparam_hdu(ds))
     if ds.source.predictor is not None:
         hdus.append(construct_t2predict_hdu(ds))
-    if ds.source.polyco is not None:
+    if ds.source.polyco_history is not None:
         hdus.append(construct_polyco_hdu(ds))
     hdus.append(construct_subint_hdu(ds))
     return fits.HDUList(hdus)
@@ -111,7 +111,7 @@ def construct_polyco_hdu(ds):
     '''
     Construct Polyco HDU
     '''
-    polyco_data = ds.source.polyco.as_table()
+    polyco_data = ds.source.polyco_history.as_table()
     polyco_hdu = fits.BinTableHDU(data=polyco_data)
     polyco_hdu.header['tunit7'] = 'MHz'
     polyco_hdu.header['tunit11'] = 'Hz'

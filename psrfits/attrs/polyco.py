@@ -1,23 +1,26 @@
 import numpy as np
+from numpy.polynomial import polynomial
 from textwrap import indent
 from datetime import datetime
 from astropy.time import Time
 
 from .attrcollection import AttrCollection, maybe_missing, if_missing
 
-class Polyco:
-    def __init__(self, entries):
-        self.entries = PolycoEntry.from_table(entries)
+class PolycoHistory:
+    def __init__(self, records):
+        self.entries = []
+        for rec in records:
+            self.entries.append(PolycoModel.from_record(rec))
     
     @classmethod
     def from_hdu(cls, hdu):
         return cls(hdu.data)
     
     def __str__(self):
-        return '<Polyco>'
+        return '<PolycoHistory>'
     
     def __repr__(self):
-        description = "<psrfits.Polyco>\nLatest entry:\n"
+        description = "<psrfits.PolycoHistory>\nLatest entry:\n"
         description += indent(self.entries[-1]._repr_items(), '    ')
         return description
     
@@ -42,10 +45,10 @@ class Polyco:
                 entry.span,
                 entry.n_coeffs,
                 entry.n_blocks,
-                entry.obscode,
+                entry.site,
                 entry.ref_freq,
                 entry.start_phase,
-                entry.ref_mjd.mjd,
+                entry.ref_mjd,
                 entry.ref_phase,
                 entry.ref_f0,
                 entry.log10_fit_err,
@@ -68,14 +71,14 @@ class Polyco:
             ]),
         )
 
-class PolycoEntry(AttrCollection):
+class PolycoModel(AttrCollection):
     __slots__ = (
-        'date',
+        'date_produced',
         'version',
         'span',
         'n_coeffs',
         'n_blocks',
-        'obscode',
+        'site',
         'ref_freq',
         'start_phase',
         'ref_mjd',
@@ -86,39 +89,57 @@ class PolycoEntry(AttrCollection):
     )
     
     @classmethod
-    def from_table(cls, table):
-        entries = [{} for i in range(table.size)]
-        for i in range(table.size):
-            date = maybe_missing(table['date_pro'][i])
-            if date is not None:
-                date = Time(date)
-            entries[i] = {
-                'date': date,
-                'version': maybe_missing(table['polyver'][i]),
-                'span': table['nspan'][i],
-                'n_coeffs': table['ncoef'][i],
-                'n_blocks': table['npblk'][i],
-                'obscode': table['nsite'][i],
-                'ref_freq': table['ref_freq'][i],
-                'start_phase': table['pred_phs'][i],
-                'ref_mjd': Time(table['ref_mjd'][i], format='mjd'),
-                'ref_phase': table['ref_phs'][i],
-                'ref_f0': table['ref_f0'][i],
-                'log10_fit_err': table['lgfiterr'][i],
-                'coeffs': table['coeff'][i],
-            }
-        return [cls(**entry) for entry in entries]
+    def from_record(cls, rec):
+        date = maybe_missing(rec['DATE_PRO'])
+        if date is not None:
+            date = Time(date)
+        return cls(
+            date_produced = date,
+            version = rec['POLYVER'],
+            span = rec['NSPAN'],
+            n_coeffs = rec['NCOEF'],
+            n_blocks = rec['NPBLK'],
+            site = rec['NSITE'],
+            ref_freq = rec['REF_FREQ'],
+            start_phase = rec['PRED_PHS'],
+            ref_mjd = rec['REF_MJD'],
+            ref_phase = rec['REF_PHS'],
+            ref_f0 = rec['REF_F0'],
+            log10_fit_err = rec['LGFITERR'],
+            coeffs = rec['COEFF'],
+        )
     
     def __str__(self):
-        return f'<PolycoEntry>'
+        return f'<PolycoModel>'
     
     def __repr__(self):
-        description = "<psrfits.PolycoEntry>\n"
+        description = "<psrfits.PolycoModel>\n"
         description += indent(self._repr_items(), '    ')
         return description
+
+    def __call__(self, mjd, check_bounds=True):
+        dt = self.dt(mjd, check_bounds)
+        phase = self.ref_phase + dt*60*self.ref_f0 + polynomial.polyval(dt, self.coeffs)
+        return phase
+
+    def f0(self, mjd, check_bounds=True):
+        dt = self.dt(mjd, check_bounds)
+
+        der_coeffs = polynomial.polyder(self.coeffs)
+        f0 = self.ref_f0 + polynomial.polyval(dt, der_coeffs)/60
+        return f0
     
+    def dt(self, mjd, check_bounds=True):
+        mjd_start = self.ref_mjd - self.span/1440
+        mjd_end = self.ref_mjd + self.span/1440
+        if check_bounds and np.any((mjd < mjd_start) | (mjd > mjd_end)):
+            raise ValueError(f'MJD {mjd[(mjd < mjd_start) | (mjd > mjd_end)]} out of bounds.')
+
+        dt = (mjd - self.ref_mjd)*1440 # minutes
+        return dt
+
     def date_as_string(self):
-        if self.date is None:
+        if self.date_produced is None:
             return ''
         else:
-            return datetime.strftime(self.date.datetime, '%a %b %d %H:%M:%S %Y')
+            return datetime.strftime(self.date_produced.datetime, '%a %b %d %H:%M:%S %Y')

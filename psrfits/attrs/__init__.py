@@ -6,4 +6,5 @@ from .observation import Observation
 from .beam import Beam
 from .calibrator import Calibrator
 from .history import History
-from .polyco import Polyco
+from .polyco import PolycoHistory, PolycoModel
+from .t2predict import ChebyModel, ChebyModelSet

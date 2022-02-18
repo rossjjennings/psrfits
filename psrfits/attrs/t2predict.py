@@ -85,13 +85,13 @@ class ChebyModel:
         description = "ChebyModel BEGIN\n"
         description += f"PSRNAME {self.psrname}\n"
         description += f"SITENAME {self.sitename}\n"
-        description += f"TIME_RANGE {self.mjd_start} {self.mjd_end}\n"
-        description += f"FREQ_RANGE {self.freq_start} {self.freq_end}\n"
-        description += f"DISPERSION_CONSTANT {self.dispersion_constant}\n"
+        description += f"TIME_RANGE {np.format_float_scientific(self.mjd_start)} {np.format_float_scientific(self.mjd_end)}\n"
+        description += f"FREQ_RANGE {np.format_float_scientific(self.freq_start)} {np.format_float_scientific(self.freq_end)}\n"
+        description += f"DISPERSION_CONSTANT {np.format_float_scientific(self.dispersion_constant)}\n"
         description += f"NCOEFF_TIME {self.coeffs.shape[0]}\n"
         description += f"NCOEFF_FREQ {self.coeffs.shape[1]}\n"
         for coeff_set in self.coeffs:
-            description += f"COEFFS " + " ".join(f"{coeff}" for coeff in coeff_set) + "\n"
+            description += f"COEFFS " + " ".join(f"{np.format_float_scientific(coeff)}" for coeff in coeff_set) + "\n"
         description += "ChebyModel END"
         return description
 

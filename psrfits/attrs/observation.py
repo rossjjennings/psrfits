@@ -146,8 +146,8 @@ class Observation(AttrCollection):
     
     def header_cards(self):
         if (self.coords.frame.__class__.__name__ != 'ICRS'
-            or self.start_coords.frame.__class__.__name__ != 'ICRS'
-            or self.stop_coords.frame.__class__.__name__ != 'ICRS'):
+            or (self.start_coords is not None and self.start_coords.frame.__class__.__name__ != 'ICRS')
+            or (self.stop_coords is not None and self.stop_coords.frame.__class__.__name__ != 'ICRS')):
             warnings.warn("Converting coordinates to J2000 for output")
         coords_icrs = self.coords.transform_to(ICRS)
         
