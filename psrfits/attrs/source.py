@@ -2,6 +2,7 @@ from textwrap import indent
 
 from .attrcollection import AttrCollection
 from .polyco import Polyco
+from .t2predict import ChebyModelSet
 
 class Source(AttrCollection):
     __slots__ = 'name', 'model', 'polyco', 'predictor'
@@ -13,7 +14,7 @@ class Source(AttrCollection):
         if 'polyco' in hdulist:
             polyco = Polyco(hdulist['polyco'].data)
         if 't2predict' in hdulist:
-            predictor = '\n'.join(line[0] for line in hdulist['t2predict'].data)
+            predictor = ChebyModelSet.parse([line[0] for line in hdulist['t2predict'].data])
         return cls(
             name = hdulist['primary'].header['src_name'],
             model = '\n'.join(line[0] for line in hdulist['psrparam'].data),

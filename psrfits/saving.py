@@ -95,8 +95,9 @@ def construct_t2predict_hdu(ds):
     '''
     Construct Tempo2 predictor HDU
     '''
+    description = ds.source.predictor.describe()
     predictor_data = np.array(
-        [line for line in ds.source.model.split('\n')],
+        [line for line in description.split('\n')],
         dtype=(np.record, [('PREDICT', 'S128')])
     )
     t2predict_hdu = fits.BinTableHDU(data=predictor_data)
