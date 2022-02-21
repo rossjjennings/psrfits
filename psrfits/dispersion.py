@@ -26,27 +26,37 @@ def weighted_center_freq(ds):
     '''
     return (np.sum(ds.freq*ds.weights)/np.sum(ds.weights)).item()
 
+def dispersion_dt(ds, DM=None, weight_center_freq=False):
+    '''
+    Compute the time delay in each channel associated with a given DM.
+    If `DM` is `None`, use the DM attribute of `ds`.
+    '''
+    if DM is None:
+        DM = ds.DM
+
+    # TEMPO/Tempo2/PRESTO conventional value (cf. Kulkarni 2020, arXiv:2007.02886)
+    K = 1/2.41e-4 # s MHz**2 cm**3 / pc
+
+    if weight_center_freq:
+        center_freq = weighted_center_freq(ds)
+    else:
+        center_freq = ds.center_freq
+
+    return K*DM*(ds.freq**-2 - center_freq**-2)
+
 def dedisperse(ds, DM=None, weight_center_freq=False):
     '''
     Dedisperse the data with the given DM.
     If `DM` is `None`, use the DM attribute of `ds`.
     '''
-    if DM is None:
-        DM = ds.DM
-    
-    K = 1/2.41e-4
-    if weight_center_freq:
-        center_freq = weighted_center_freq(ds)
-    else:
-        center_freq = ds.center_freq
-    time_delays = K*DM*(center_freq**-2 - ds.freq**-2)
+    time_delays = dispersion_dt(ds, DM, weight_center_freq)
     
     tbin = ds.time_per_bin
     bin_delays = time_delays/tbin
     
     new_data_vars = dict(ds.data_vars)
     for pol in get_pols(ds):
-        dedispersed_arr = fft_roll(ds.data_vars[pol][-1], bin_delays)
+        dedispersed_arr = fft_roll(ds.data_vars[pol][-1], -bin_delays)
         new_data_vars.update({pol: (['time', 'freq', 'phase'], dedispersed_arr)})
     
     return Dataset(new_data_vars, ds.coords, ds.attrs)
