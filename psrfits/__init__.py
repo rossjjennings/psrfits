@@ -1,4 +1,4 @@
-from psrfits.loading import read, load, ingest
+from psrfits.loading import load
 from psrfits.saving import save
 from psrfits.dispersion import dispersion_dt, dedisperse
 from psrfits.polarization import pscrunch, to_stokes

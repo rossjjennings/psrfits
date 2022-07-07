@@ -12,32 +12,47 @@ from psrfits.dispersion import dedisperse
 from psrfits.baseline import remove_baseline
 from psrfits.uniform import uniformize
 
-def ingest(filename, weight=False, DM=None, wcfreq=False,
-           baseline_method='offpulse', output_polns='IQUV'):
+def load(filename, unpack_samples=True, weight=False, uniformize_freqs=False, prepare=False,
+         DM=None, baseline_method='offpulse', wcfreq=False, output_polns='IQUV'):
     '''
-    Load a PSRFITS file, dedisperse and remove the baseline.
+    Open a PSRFITS file and load the contents into a Dataset.
+
+    Parameters
+    ----------
+    unpack_samples (default: True): Whether to apply the saved scale factor and
+        offset to the data, converting from the on-disk integer format to 64-bit
+        floating point. Disabling this can be useful for testing or inspecting the
+        raw data directly.
+    weight (default: False): Whether to multiply the data by the weights present in
+        the file. Typically these are proportional to the time-bandwidth product.
+    uniformize_freqs (default: False): Whether to replace the frequencies present in
+        the file by an educated guess at a uniformly-spaced version.
+    prepare (default: False): Whether to automatically dedisperse the data and
+        subtract the baseline from each profile. This can also be done after loading
+        using dedicated functions.
+    DM (default: None): The DM to use for dedispersion (if applied). If this is `None`,
+        the appropriated DM will be determined from the FITS file header.
+    baseline_method (default: 'offpulse'): The method used to determine the baseline
+        level when it is to be removed. Options are 'offpulse', which takes the mean
+        of an automatically determined "off-pulse" region, and 'median', which takes
+        the median of the entire profile.
+    wcfreq (default: False): Whether to use a "weighted" center frequency. This can be
+        used to replicate the behaviour of PyPulse, but generally is best left alone.
+    output_polns (default: 'IQUV'): Output polarizations to produce. The default value
+        of 'IQUV' will produce all four Stokes parameters; a value of 'I' can be used
+        to polarization-average the data.
     '''
-    ds = load(filename, weight)
-    ds = dedisperse(ds, DM, weight_center_freq=wcfreq)
-    ds = remove_baseline(ds, method=baseline_method)
+    with fits.open(filename) as hdulist:
+        ds = to_dataset(hdulist, uniformize_freqs)
+    if unpack_samples:
+        ds = unpack(ds, weight)
+    if prepare:
+        ds = dedisperse(ds, DM, weight_center_freq=wcfreq)
+        ds = remove_baseline(ds, method='offpulse')
     if output_polns == 'I':
         ds = pscrunch(ds)
     elif output_polns == 'IQUV':
         ds = to_stokes(ds)
-    return ds
-
-def read(filename):
-    '''
-    Open a PSRFITS file and load the contents into a Dataset.
-    '''
-    with fits.open(filename) as hdulist:
-        ds = to_dataset(hdulist)
-    return ds
-
-def load(filename, weight=False, uniformize_freqs=True):
-    with fits.open(filename) as hdulist:
-        ds = to_dataset(hdulist, uniformize_freqs)
-    ds = unpack(ds, weight)
     return ds
 
 def to_dataset(hdulist, uniformize_freqs=False):
