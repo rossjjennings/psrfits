@@ -8,12 +8,12 @@ from psrfits.attrs import *
 from psrfits.dataset import Dataset
 from psrfits.attrs.attrcollection import maybe_missing
 from psrfits.polarization import pol_split, get_pols, pscrunch, to_stokes
-from psrfits.dispersion import dedisperse
+from psrfits.dispersion import dedisperse, align_with_predictor
 from psrfits.baseline import remove_baseline
 from psrfits.uniform import uniformize
 
 def load(filename, unpack_samples=True, weight=False, uniformize_freqs=False, prepare=False,
-         DM=None, baseline_method='avgprof', wcfreq=False, output_polns='IQUV'):
+         use_predictor=True, baseline_method='avgprof', output_polns='IQUV'):
     '''
     Open a PSRFITS file and load the contents into a Dataset.
 
@@ -30,8 +30,8 @@ def load(filename, unpack_samples=True, weight=False, uniformize_freqs=False, pr
     prepare (default: False): Whether to automatically dedisperse the data and
         subtract the baseline from each profile. This can also be done after loading
         using dedicated functions.
-    DM (default: None): The DM to use for dedispersion (if applied). If this is `None`,
-        the appropriated DM will be determined from the FITS file header.
+    use_predictor (default: True): Whether to dedisperse using the Tempo2 predictor,
+        if available, rather than the DM in the header. Ignored if `prepare` is `False`.
     baseline_method (default: 'avgprof'): The method used to determine the baseline
         level when it is to be removed. Options are 'avgprof', 'offpulse', and 'median'.
         See psrfits.baseline.remove_baseline() for details.
@@ -46,7 +46,10 @@ def load(filename, unpack_samples=True, weight=False, uniformize_freqs=False, pr
     if unpack_samples:
         ds = unpack(ds, weight)
     if prepare:
-        ds = dedisperse(ds, DM, weight_center_freq=wcfreq)
+        if use_predictor:
+            ds = align_with_predictor(ds)
+        else:
+            ds = dedisperse(ds)
         ds = remove_baseline(ds)
     if output_polns == 'I':
         ds = pscrunch(ds)

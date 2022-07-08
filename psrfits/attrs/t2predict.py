@@ -117,30 +117,33 @@ class ChebyModelSet:
             raise ValueError(f'Number of segments ({len(segments)}) does not match specification ({nsegments}).')
         return cls(segments)
 
-    def __call__(self, mjd, freq):
-        segment = self.covering_segment(mjd, freq)
-        return segment(mjd, freq)
+    def __call__(self, mjd, freq, extrap=False):
+        segment = self.covering_segment(mjd, freq, extrap)
+        return segment(mjd, freq, check_bounds=(not extrap))
 
-    def f0(self, mjd, freq):
-        segment = self.covering_segment(mjd, freq)
-        return segment.f0(mjd, freq)
+    def f0(self, mjd, freq, extrap=False):
+        segment = self.covering_segment(mjd, freq, extrap)
+        return segment.f0(mjd, freq, check_bounds=(not extrap))
 
     def covers(self, mjd, freq):
         return any(segment.covers(mjd, freq) for segment in self.segments)
 
-    def covering_segment(self, mjd, freq):
+    def covering_segment(self, mjd, freq, extrap=False):
         covering_segments = [segment.covers(mjd, freq) for segment in self.segments]
         if not any(covering_segments):
-            raise ValueError('MJD and frequency not covered by any segments.')
+            if extrap:
+                mjd_diffs = [mjd - np.abs((segment.mjd_start + segment.mjd_end)/2) for segment in segments]
+                segment = relevant_segments[np.argmin(mjd_diffs)]
+            else:
+                raise ValueError('MJD and frequency not covered by any segments.')
         elif sum(covering_segments) > 1:
             # Multiple segments cover this MJD and frequency
             relevant_segments = [segment for segment, covers in zip(self.segments, covering_segments) if covers]
             mjd_diffs = [mjd - np.abs((segment.mjd_start + segment.mjd_end)/2) for segment in relevant_segments]
             segment = relevant_segments[np.argmin(mjd_diffs)]
-            return segment
         else:
             segment = self.segments[covering_segments.index(True)]
-            return segment
+        return segment
 
     def describe(self):
         description = f"ChebyModelSet {len(self.segments)} segments"
