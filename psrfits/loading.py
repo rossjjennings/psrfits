@@ -13,7 +13,7 @@ from psrfits.baseline import remove_baseline
 from psrfits.uniform import uniformize
 
 def load(filename, unpack_samples=True, weight=False, uniformize_freqs=False, prepare=False,
-         DM=None, baseline_method='offpulse', wcfreq=False, output_polns='IQUV'):
+         DM=None, baseline_method='avgprof', wcfreq=False, output_polns='IQUV'):
     '''
     Open a PSRFITS file and load the contents into a Dataset.
 
@@ -32,10 +32,9 @@ def load(filename, unpack_samples=True, weight=False, uniformize_freqs=False, pr
         using dedicated functions.
     DM (default: None): The DM to use for dedispersion (if applied). If this is `None`,
         the appropriated DM will be determined from the FITS file header.
-    baseline_method (default: 'offpulse'): The method used to determine the baseline
-        level when it is to be removed. Options are 'offpulse', which takes the mean
-        of an automatically determined "off-pulse" region, and 'median', which takes
-        the median of the entire profile.
+    baseline_method (default: 'avgprof'): The method used to determine the baseline
+        level when it is to be removed. Options are 'avgprof', 'offpulse', and 'median'.
+        See psrfits.baseline.remove_baseline() for details.
     wcfreq (default: False): Whether to use a "weighted" center frequency. This can be
         used to replicate the behaviour of PyPulse, but generally is best left alone.
     output_polns (default: 'IQUV'): Output polarizations to produce. The default value
@@ -48,7 +47,7 @@ def load(filename, unpack_samples=True, weight=False, uniformize_freqs=False, pr
         ds = unpack(ds, weight)
     if prepare:
         ds = dedisperse(ds, DM, weight_center_freq=wcfreq)
-        ds = remove_baseline(ds, method='offpulse')
+        ds = remove_baseline(ds)
     if output_polns == 'I':
         ds = pscrunch(ds)
     elif output_polns == 'IQUV':
