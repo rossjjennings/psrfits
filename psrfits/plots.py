@@ -1,12 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def spec_plot(ds, arr, cmap='viridis', colorbar=False):
-    fig, ax = plt.subplots()
-    arr_shifted = np.roll(arr, len(ds.phase)//2, axis=-1)
-    phase_shifted = ds.phase - ds.phase[len(ds.phase)//2]
-    pc = ax.pcolormesh(phase_shifted, ds.freq, arr_shifted, cmap=cmap)
-    if colorbar: plt.colorbar(pc)
-    ax.set(xlabel='Phase (ms)', ylabel='Frequency (MHz)')
+def plot_portrait(ds, ax, portrait, **kwargs):
+    shifted_portrait = np.roll(portrait, len(ds.phase)//2, axis=-1)
+    shifted_phase = ds.phase - ds.phase[len(ds.phase)//2]
+    pc = ax.pcolormesh(shifted_phase, ds.freq, shifted_portrait, **kwargs)
+    ax.set(xlabel='Phase (cycles)', ylabel='Frequency (MHz)')
     
-    return ax
+    return pc
