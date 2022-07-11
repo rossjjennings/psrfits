@@ -13,7 +13,7 @@ from psrfits.baseline import remove_baseline
 from psrfits.uniform import uniformize
 
 def load(filename, unpack_samples=True, weight=False, uniformize_freqs=False, prepare=False,
-         use_predictor=True, baseline_method='avgprof', output_polns='IQUV'):
+         use_predictor=True, baseline_method='avgprof', output_polns=None):
     '''
     Open a PSRFITS file and load the contents into a Dataset.
 
@@ -37,9 +37,9 @@ def load(filename, unpack_samples=True, weight=False, uniformize_freqs=False, pr
         See psrfits.baseline.remove_baseline() for details.
     wcfreq (default: False): Whether to use a "weighted" center frequency. This can be
         used to replicate the behaviour of PyPulse, but generally is best left alone.
-    output_polns (default: 'IQUV'): Output polarizations to produce. The default value
-        of 'IQUV' will produce all four Stokes parameters; a value of 'I' can be used
-        to polarization-average the data.
+    output_polns (default: None): Output polarizations to produce. The value 'IQUV'
+        will produce all four Stokes parameters; a value of 'I' gives intensity only.
+        Any other value will leave the polarizations in the file unchanged.
     '''
     with fits.open(filename) as hdulist:
         ds = to_dataset(hdulist, uniformize_freqs)
