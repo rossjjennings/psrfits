@@ -17,8 +17,9 @@ class ChebyModel:
     def parse(cls, lines):
         args = {}
         coeffs = []
-        for line in lines:
-            parts = line.split()
+        i = 0
+        while i < len(lines):
+            parts = lines[i].split()
             if parts[0] == 'PSRNAME':
                 args['psrname'] = parts[1]
             elif parts[0] == 'SITENAME':
@@ -36,7 +37,13 @@ class ChebyModel:
             elif parts[0] == 'NCOEFF_FREQ':
                 ncoeff_freq = int(parts[1])
             elif parts[0] == 'COEFFS':
-                coeffs.append([np.longdouble(part) for part in parts[1:]])
+                coeffs_freq = [np.longdouble(part) for part in parts[1:]]
+                while len(coeffs_freq) < ncoeff_freq:
+                    i += 1
+                    parts = lines[i].split()
+                    coeffs_freq.extend([np.longdouble(part) for part in parts])
+                coeffs.append(coeffs_freq)
+            i += 1
         coeffs = np.array(coeffs, dtype=np.longdouble)
         if coeffs.shape != (ncoeff_time, ncoeff_freq):
             raise ValueError(f'Number of coefficients ({self.coeffs.shape[0]}x{self.coeffs.shape[1]}) '
