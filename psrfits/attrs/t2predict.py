@@ -104,6 +104,8 @@ class ChebyModelSet:
         segments = []
         for line in lines:
             parts = line.split()
+            if len(parts) == 0:
+                continue
             if parts[0] == 'ChebyModelSet':
                 nsegments = int(parts[1])
             elif parts[0] == 'ChebyModel':
