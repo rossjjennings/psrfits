@@ -141,8 +141,8 @@ class ChebyModelSet:
         covering_segments = [segment.covers(mjd, freq) for segment in self.segments]
         if not any(covering_segments):
             if extrap:
-                mjd_diffs = [mjd - np.abs((segment.mjd_start + segment.mjd_end)/2) for segment in segments]
-                segment = relevant_segments[np.argmin(mjd_diffs)]
+                mjd_diffs = [mjd - np.abs((segment.mjd_start + segment.mjd_end)/2) for segment in self.segments]
+                segment = self.segments[np.argmin(mjd_diffs)]
             else:
                 raise ValueError('MJD and frequency not covered by any segments.')
         elif sum(covering_segments) > 1:

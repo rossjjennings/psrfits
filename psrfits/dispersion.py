@@ -78,7 +78,7 @@ def align_with_predictor(ds, extrap=False):
     '''
     Dedisperse and align the data using the internal Tempo2 predictor.
     '''
-    phase_offs = channel_phase(ds)
+    phase_offs = channel_phase(ds, extrap)
 
     new_data_vars = dict(ds.data_vars)
     for pol in get_pols(ds):
