@@ -4,6 +4,8 @@ from astropy.io import fits
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, EarthLocation, Longitude
 import astropy.units as u
+import dask.array as da
+
 from psrfits.attrs import *
 from psrfits.dataset import Dataset
 from psrfits.attrs.attrcollection import maybe_missing
@@ -41,8 +43,7 @@ def load(filename, unpack_samples=True, weight=False, uniformize_freqs=False, pr
         will produce all four Stokes parameters; a value of 'I' gives intensity only.
         Any other value will leave the polarizations in the file unchanged.
     '''
-    with fits.open(filename) as hdulist:
-        ds = to_dataset(hdulist, uniformize_freqs)
+    ds = make_dataset(filename, uniformize_freqs)
     if unpack_samples:
         ds = unpack(ds, weight)
     if prepare:
@@ -57,10 +58,50 @@ def load(filename, unpack_samples=True, weight=False, uniformize_freqs=False, pr
         ds = to_stokes(ds)
     return ds
 
-def to_dataset(hdulist, uniformize_freqs=False):
+def _load_copy(filename, hdu, column):
     '''
-    Convert a FITS HDUList object into an in-memory Dataset object.
+    Open a FITS file and make an in-memory copy of a specific HDU column.
+    Intended to be used in delayed form by _load_delayed.
     '''
+    hdul = fits.open(filename)
+    arr = hdul[hdu].data[column].copy()
+    hdul.close()
+    return arr
+
+def _load_delayed(filename, hdu, column):
+    '''
+    Make a single-chunk Dask array from a column of an HDU within a FITS file,
+    using dask.delayed to open and read the file only when needed.
+    '''
+    hdul = fits.open(filename)
+    shape = hdul[hdu].data[column].shape
+    dtype = hdul[hdu].data[column].dtype
+    hdul.close()
+    arr = delayed(load_copy)(filename, hdu, column)
+
+    # hdul[hdu].data[column] goes out of scope here and can be garbage collected.
+    # If this were not the case, it would keep around an open file handle.
+    return da.from_delayed(arr, shape, dtype, name=f'{filename}.{hdu}.{column}')
+
+def _load_memmap(filename, hdu, column, chunks=None):
+    '''
+    Make a Dask array from a column of an HDU within a memory-mapped FITS file.
+    The array will be faster to work with than if _load_delayed() were used, but
+    it will keep around an open file handle, and if too many files are read
+    this way, you might get a "too many open files" error.
+    '''
+    hdul = fits.open(filename)
+    arr = hdul[hdu].data[col]
+    hdul.close()
+    # Providing a `name` argument to `da.from_array()` is crucial for performance,
+    # since otherwise the name is derived by hashing each chunk.
+    return da.from_array(arr, name=f'{filename}.{hdu}.{column}', chunks=chunks)
+
+def make_dataset(filename, uniformize_freqs=False):
+    '''
+    Construct a Dataset object from a PSRFITS file.
+    '''
+    hdulist = fits.open(filename)
     primary_hdu = hdulist['primary']
     history_hdu = hdulist['history']
     subint_hdu = hdulist['subint']
@@ -193,6 +234,7 @@ def to_dataset(hdulist, uniformize_freqs=False):
     
     ds = Dataset(data_vars, coords, attrs)
     
+    hdulist.close()
     return ds
 
 def unpack(ds, weight=False):
