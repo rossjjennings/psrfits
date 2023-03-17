@@ -1,5 +1,5 @@
 import numpy as np
-from psrfits.dataset import Dataset
+#from psrfits.dataset import Dataset
 from psrfits.polarization import get_pols
 
 def remove_baseline(ds, method='avgprof', frac=1/8):

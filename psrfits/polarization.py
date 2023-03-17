@@ -1,10 +1,10 @@
 import numpy as np
-from psrfits.dataset import Dataset
+#from psrfits.dataset import Dataset
 
 def pol_split(data, pol_type):
     '''
     Split a PSRFITS dataset into variables representing the polarizations.
-    Return the result as a dictionary of data variables suitable for 
+    Return the result as a dictionary of data variables suitable for
     constructing a Dataset.
     '''
     if pol_type in ['AA+BB', 'INTEN']:
@@ -28,7 +28,7 @@ def pol_split(data, pol_type):
                      'V': (['time', 'freq', 'phase'], V)}
     else:
         raise ValueError("Polarization type '{}' not recognized.".format(pol_type))
-    
+
     return data_vars
 
 def get_pols(ds):
