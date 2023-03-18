@@ -5,6 +5,7 @@ from astropy.coordinates import SkyCoord, EarthLocation, Longitude
 import astropy.units as u
 import dask.array as da
 from dask import delayed
+from pint import PulsarMJD
 from psrfits.formatting import fmt_items, fmt_array
 from psrfits.attrs import *
 from psrfits.attrs.attrcollection import maybe_missing
@@ -31,8 +32,7 @@ class DataFile:
         history_hdu = hdulist['history']
         subint_hdu = hdulist['subint']
 
-        # Get coordinates
-        time = subint_hdu.data['offs_sub'].copy()
+        # get frequencies
         dat_freq = subint_hdu.data['dat_freq']
         freq = np.atleast_1d(dat_freq[0].copy())
         channel_bandwidth = subint_hdu.header['chan_bw']
@@ -63,16 +63,15 @@ class DataFile:
             phs_offs = 0.
         phase = np.linspace(0., nbin/nbin_prd, nbin, endpoint=False) + phs_offs
 
-        start_time = Time(primary_hdu.header['stt_imjd'], format='mjd')
-        start_time.format = 'isot'
+        start_time = Time(primary_hdu.header['stt_imjd'], format='pulsar_mjd')
         start_time += primary_hdu.header['stt_smjd']*u.s
         start_time += primary_hdu.header['stt_offs']*u.s
 
         attrs = {
-            'time': time,
-            'freq': freq,
+            'epoch': start_time + subint_hdu.data['offs_sub'].copy()*u.s,
+            'freq': freq*u.MHz,
             'phase': phase,
-            'duration': subint_hdu.data['tsubint'].copy(),
+            'duration': subint_hdu.data['tsubint'].copy()*u.s,
             'index': subint_hdu.data['indexval'],
             'source': Source.from_hdulist(hdulist),
             'observation': Observation.from_header(primary_hdu.header),
@@ -82,13 +81,12 @@ class DataFile:
             'beam': Beam.from_header(primary_hdu.header),
             'calibrator': Calibrator.from_header(primary_hdu.header),
             'history': History.from_hdu(history_hdu),
-            'frequency': primary_hdu.header['obsfreq'],
-            'bandwidth': primary_hdu.header['obsbw'],
-            'center_freq': history_hdu.data['ctr_freq'][-1],
+            'center_freq': primary_hdu.header['obsfreq']*u.MHz,
+            'bandwidth': primary_hdu.header['obsbw']*u.MHz,
             'channel_offset': maybe_missing(subint_hdu.header['nchnoffs']), # *
-            'channel_bandwidth': subint_hdu.header['chan_bw'],
-            'DM': subint_hdu.header['DM'],
-            'RM': subint_hdu.header['RM'],
+            'channel_bandwidth': subint_hdu.header['chan_bw']*u.MHz,
+            'DM': subint_hdu.header['DM']*u.pc/u.cm**3,
+            'RM': subint_hdu.header['RM']*u.rad/u.m**2,
             'n_polns': subint_hdu.header['npol'],
             'pol_type': subint_hdu.header['pol_type'],
             'start_time': start_time,
@@ -97,20 +95,33 @@ class DataFile:
             'time_var': subint_hdu.header['int_type'],
             'time_unit': subint_hdu.header['int_unit'],
             'flux_unit': subint_hdu.header['scale'],
+        }
+
+        attrs.update({
             'time_per_bin': history_hdu.data['tbin'][-1],
-            'lst': subint_hdu.data['lst_sub'].copy(),
-            'ra': subint_hdu.data['ra_sub'].copy(),
-            'dec': subint_hdu.data['dec_sub'].copy(),
-            'glon': subint_hdu.data['glon_sub'].copy(),
-            'glat': subint_hdu.data['glat_sub'].copy(),
+            'lst': Longitude(subint_hdu.data['lst_sub'].copy()/3600, u.hourangle),
+            'coords': SkyCoord(
+                subint_hdu.data['ra_sub'].copy(),
+                subint_hdu.data['dec_sub'].copy(),
+                frame='icrs', unit='deg',
+            ),
+            'coords_galactic': SkyCoord(
+                subint_hdu.data['glon_sub'].copy(),
+                subint_hdu.data['glat_sub'].copy(),
+                frame='galactic', unit='deg',
+            ),
             'feed_angle': subint_hdu.data['fd_ang'].copy(),
             'pos_angle': subint_hdu.data['pos_ang'].copy(),
             'par_angle': subint_hdu.data['par_ang'].copy(),
-            'az': subint_hdu.data['tel_az'].copy(),
-            'zen': subint_hdu.data['tel_zen'].copy(),
-            'aux_dm': subint_hdu.data['aux_dm'].copy(),
-            'aux_rm': subint_hdu.data['aux_rm'].copy(),
-        }
+            'coords_altaz': SkyCoord(
+                subint_hdu.data['tel_az'].copy(),
+                90 - subint_hdu.data['tel_zen'].copy(),
+                frame='altaz', unit='deg',
+                obstime=attrs['epoch'], location=attrs['telescope'].location,
+            ),
+            'aux_dm': subint_hdu.data['aux_dm'].copy()*u.pc/u.cm**3,
+            'aux_rm': subint_hdu.data['aux_rm'].copy()*u.rad/u.m**2,
+        })
         hdulist.close()
 
         if loader == 'lazy':
@@ -122,12 +133,13 @@ class DataFile:
 
         data = load(filename, 'subint', 'data')
         weights = load(filename, 'subint', 'dat_wts')
-        weights = weights.reshape(time.size, freq.size)
+        weights = weights.reshape(data.shape[0], data.shape[2])
         scale = load(filename, 'subint', 'dat_scl')
         npol = attrs['n_polns']
-        scale = scale.reshape(time.size, npol, freq.size)
+        scale = scale.reshape(data.shape[:3])
         offset = load(filename, 'subint', 'dat_offs')
-        offset = offset.reshape(time.size, npol, freq.size)
+        offset = offset.reshape(data.shape[:3])
+        attrs['frequencies'] = load(filename, 'subint', 'dat_freq')
 
         data = scale[..., np.newaxis]*data + offset[..., np.newaxis]
 
@@ -164,34 +176,27 @@ class DataFile:
         )
 
     def info(self):
+        nsub, npol, nchan, nbin = self.data.shape
         info_items = {
-            'Dimensions': f"(time: {self.time.size}, freq: {self.freq.size}, phase: {self.phase.size})",
             'Source': self.source.name,
             'Mode': self.observation.mode,
             'Telescope': self.telescope.name,
             'Frontend': self.frontend.name,
             'Backend': self.backend.name,
+            'Project ID': self.observation.project_id,
             'Start Time': self.start_time,
-            'Duration': f"{np.sum(self.duration):.2f} s",
-            'Frequency': self.frequency,
+            'Duration': f"{np.sum(self.duration):g} s",
+            'Subintegrations': nsub,
+            'Center Frequency': self.center_freq,
             'Bandwidth': self.bandwidth,
+            'Channels': nchan,
             'Polarizations': self.pol_type,
+            'Phase Bins': nbin,
         }
         print(fmt_items(info_items))
 
     def all_attrs(self):
         print(fmt_items(self.__dict__))
-
-def fmt_coord(name, coord):
-    dims_str = f"({name})"
-    dims_dtype = dims_str + ' ' + str(coord.dtype) + ' '
-    return dims_dtype + fmt_array(coord, 65 - len(dims_dtype))
-
-def fmt_datavar(datavar):
-    dims, var = datavar
-    dims_str = f"({', '.join(dims)})"
-    dims_dtype = dims_str + ' ' + str(var.dtype) + ' '
-    return dims_dtype + fmt_array(var, 65 - len(dims_dtype))
 
 def load_copy(filename, hdu, column):
     '''

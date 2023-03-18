@@ -17,7 +17,7 @@ def fmt_items(mapping):
     return description
 
 def fmt_inline(item):
-    if isinstance(item, SkyCoord):
+    if isinstance(item, SkyCoord) and item.size == 1:
         item_str = fmt_skycoord(item)
     else:
         item_str = str(item)
