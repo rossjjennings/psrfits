@@ -3,19 +3,22 @@ from astropy.io import fits
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, EarthLocation, Longitude
 import astropy.units as u
+import dask.array as da
+from dask import delayed
 from psrfits.formatting import fmt_items, fmt_array
 from psrfits.attrs import *
 from psrfits.attrs.attrcollection import maybe_missing
 from textwrap import indent
 
 class DataFile:
-    def __init__(self, data, **attrs):
+    def __init__(self, data, weights, **attrs):
         self.data = data
+        self.weights = weights
         for attr, val in attrs.items():
             setattr(self, attr, val)
 
     @classmethod
-    def from_file(cls, filename, uniformize_freqs=False):
+    def from_file(cls, filename, loader='lazy', uniformize_freqs=False):
         '''
         Construct a Observation object from a PSRFITS file.
         '''
@@ -24,17 +27,14 @@ class DataFile:
         history_hdu = hdulist['history']
         subint_hdu = hdulist['subint']
 
-        data = subint_hdu.data['data']
-        #data_vars = pol_split(data, subint_hdu.header['pol_type'])
-
         primary_hdu = hdulist['primary']
         history_hdu = hdulist['history']
         subint_hdu = hdulist['subint']
 
         # Get coordinates
-        time = subint_hdu.data['offs_sub']
+        time = subint_hdu.data['offs_sub'].copy()
         dat_freq = subint_hdu.data['dat_freq']
-        freq = np.atleast_1d(dat_freq[0])
+        freq = np.atleast_1d(dat_freq[0].copy())
         channel_bandwidth = subint_hdu.header['chan_bw']
         bandwidth = primary_hdu.header['obsbw']
 
@@ -72,8 +72,7 @@ class DataFile:
             'time': time,
             'freq': freq,
             'phase': phase,
-            'duration': subint_hdu.data['tsubint'],
-            'weights': subint_hdu.data['dat_wts'].reshape(time.size, freq.size),
+            'duration': subint_hdu.data['tsubint'].copy(),
             'index': subint_hdu.data['indexval'],
             'source': Source.from_hdulist(hdulist),
             'observation': Observation.from_header(primary_hdu.header),
@@ -99,24 +98,59 @@ class DataFile:
             'time_unit': subint_hdu.header['int_unit'],
             'flux_unit': subint_hdu.header['scale'],
             'time_per_bin': history_hdu.data['tbin'][-1],
-            'scale': subint_hdu.data['dat_scl'],
-            'offset': subint_hdu.data['dat_offs'],
-            'lst': subint_hdu.data['lst_sub'],
-            'ra': subint_hdu.data['ra_sub'],
-            'dec': subint_hdu.data['dec_sub'],
-            'glon': subint_hdu.data['glon_sub'],
-            'glat': subint_hdu.data['glat_sub'],
-            'feed_angle': subint_hdu.data['fd_ang'],
-            'pos_angle': subint_hdu.data['pos_ang'],
-            'par_angle': subint_hdu.data['par_ang'],
-            'az': subint_hdu.data['tel_az'],
-            'zen': subint_hdu.data['tel_zen'],
-            'aux_dm': subint_hdu.data['aux_dm'],
-            'aux_rm': subint_hdu.data['aux_rm'],
+            'lst': subint_hdu.data['lst_sub'].copy(),
+            'ra': subint_hdu.data['ra_sub'].copy(),
+            'dec': subint_hdu.data['dec_sub'].copy(),
+            'glon': subint_hdu.data['glon_sub'].copy(),
+            'glat': subint_hdu.data['glat_sub'].copy(),
+            'feed_angle': subint_hdu.data['fd_ang'].copy(),
+            'pos_angle': subint_hdu.data['pos_ang'].copy(),
+            'par_angle': subint_hdu.data['par_ang'].copy(),
+            'az': subint_hdu.data['tel_az'].copy(),
+            'zen': subint_hdu.data['tel_zen'].copy(),
+            'aux_dm': subint_hdu.data['aux_dm'].copy(),
+            'aux_rm': subint_hdu.data['aux_rm'].copy(),
         }
-
-        obs = cls(data, **attrs)
         hdulist.close()
+
+        if loader == 'lazy':
+            load = load_delayed
+        elif loader == 'mmap':
+            load = load_mmap
+        elif loader == 'eager':
+            load = load_copy
+
+        data = load(filename, 'subint', 'data')
+        weights = load(filename, 'subint', 'dat_wts')
+        weights = weights.reshape(time.size, freq.size)
+        scale = load(filename, 'subint', 'dat_scl')
+        npol = attrs['n_polns']
+        scale = scale.reshape(time.size, npol, freq.size)
+        offset = load(filename, 'subint', 'dat_offs')
+        offset = offset.reshape(time.size, npol, freq.size)
+
+        data = scale[..., np.newaxis]*data + offset[..., np.newaxis]
+
+        pol_type = attrs['pol_type']
+        if pol_type in ['AA+BB', 'INTEN']:
+            attrs['I'] = data[:,0]
+        elif pol_type == 'AABB':
+            attrs['AA'] = data[:,0]
+            attrs['BB'] = data[:,1]
+        elif pol_type == 'AABBCRCI':
+            attrs['AA'] = data[:,0]
+            attrs['BB'] = data[:,1]
+            attrs['CR'] = data[:,2]
+            attrs['CI'] = data[:,3]
+        elif pol_type == 'IQUV':
+            attrs['I'] = data[:,0]
+            attrs['Q'] = data[:,1]
+            attrs['U'] = data[:,2]
+            attrs['V'] = data[:,3]
+        else:
+            raise ValueError("Polarization type '{}' not recognized.".format(pol_type))
+
+        obs = cls(data, weights, **attrs)
 
         return obs
 
@@ -158,3 +192,42 @@ def fmt_datavar(datavar):
     dims_str = f"({', '.join(dims)})"
     dims_dtype = dims_str + ' ' + str(var.dtype) + ' '
     return dims_dtype + fmt_array(var, 65 - len(dims_dtype))
+
+def load_copy(filename, hdu, column):
+    '''
+    Open a FITS file and make an in-memory copy of a specific HDU column.
+    Intended to be used in delayed form by _load_delayed.
+    '''
+    hdul = fits.open(filename)
+    arr = hdul[hdu].data[column].copy()
+    hdul.close()
+    return arr
+
+def load_delayed(filename, hdu, column):
+    '''
+    Make a single-chunk Dask array from a column of an HDU within a FITS file,
+    using dask.delayed to open and read the file only when needed.
+    '''
+    hdul = fits.open(filename)
+    shape = hdul[hdu].data[column].shape
+    dtype = hdul[hdu].data[column].dtype
+    hdul.close()
+    arr = delayed(load_copy)(filename, hdu, column)
+
+    # hdul[hdu].data[column] goes out of scope here and can be garbage collected.
+    # If this were not the case, it would keep around an open file handle.
+    return da.from_delayed(arr, shape, dtype, name=f'{filename}.{hdu}.{column}')
+
+def load_memmap(filename, hdu, column, chunks=None):
+    '''
+    Make a Dask array from a column of an HDU within a memory-mapped FITS file.
+    The array will be faster to work with than if _load_delayed() were used, but
+    it will keep around an open file handle, and if too many files are read
+    this way, you might get a "too many open files" error.
+    '''
+    hdul = fits.open(filename)
+    arr = hdul[hdu].data[col]
+    hdul.close()
+    # Providing a `name` argument to `da.from_array()` is crucial for performance,
+    # since otherwise the name is derived by hashing each chunk.
+    return da.from_array(arr, name=f'{filename}.{hdu}.{column}', chunks=chunks)

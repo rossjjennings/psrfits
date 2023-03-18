@@ -1,36 +1,6 @@
 import numpy as np
 #from psrfits.dataset import Dataset
 
-def pol_split(data, pol_type):
-    '''
-    Split a PSRFITS dataset into variables representing the polarizations.
-    Return the result as a dictionary of data variables suitable for
-    constructing a Dataset.
-    '''
-    if pol_type in ['AA+BB', 'INTEN']:
-        I, = np.swapaxes(data, 0, 1)
-        data_vars = {'I': (['time', 'freq', 'phase'], I)}
-    elif pol_type == 'AABB':
-        AA, BB = np.swapaxes(data, 0, 1)
-        data_vars = {'AA': (['time', 'freq', 'phase'], AA),
-                     'BB': (['time', 'freq', 'phase'], BB)}
-    elif pol_type == 'AABBCRCI':
-        AA, BB, CR, CI = np.swapaxes(data, 0, 1)
-        data_vars = {'AA': (['time', 'freq', 'phase'], AA),
-                     'BB': (['time', 'freq', 'phase'], BB),
-                     'CR': (['time', 'freq', 'phase'], CR),
-                     'CI': (['time', 'freq', 'phase'], CI)}
-    elif pol_type == 'IQUV':
-        I, Q, U, V = np.swapaxes(data, 0, 1)
-        data_vars = {'I': (['time', 'freq', 'phase'], I),
-                     'Q': (['time', 'freq', 'phase'], Q),
-                     'U': (['time', 'freq', 'phase'], U),
-                     'V': (['time', 'freq', 'phase'], V)}
-    else:
-        raise ValueError("Polarization type '{}' not recognized.".format(pol_type))
-
-    return data_vars
-
 def get_pols(ds):
     '''
     Return a list the polarizations present in the dataset `ds`.
