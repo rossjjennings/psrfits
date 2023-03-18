@@ -7,24 +7,20 @@ import astropy.units as u
 import dask.array as da
 
 from psrfits.attrs import *
-#from psrfits.dataset import Dataset
+from psrfits.dataset import DataFile
 from psrfits.attrs.attrcollection import maybe_missing
 from psrfits.polarization import get_pols, pscrunch, to_stokes
 from psrfits.dispersion import dedisperse, align_with_predictor
 from psrfits.baseline import remove_baseline
 from psrfits.uniform import uniformize
 
-def load(filename, unpack_samples=True, weight=False, uniformize_freqs=False, prepare=False,
+def load(filename, weight=False, uniformize_freqs=False, prepare=False,
          use_predictor=True, baseline_method='avgprof', output_polns=None):
     '''
     Open a PSRFITS file and load the contents into a Dataset.
 
     Parameters
     ----------
-    unpack_samples (default: True): Whether to apply the saved scale factor and
-        offset to the data, converting from the on-disk integer format to 64-bit
-        floating point. Disabling this can be useful for testing or inspecting the
-        raw data directly.
     weight (default: False): Whether to multiply the data by the weights present in
         the file. Typically these are proportional to the time-bandwidth product.
     uniformize_freqs (default: False): Whether to replace the frequencies present in
@@ -43,9 +39,7 @@ def load(filename, unpack_samples=True, weight=False, uniformize_freqs=False, pr
         will produce all four Stokes parameters; a value of 'I' gives intensity only.
         Any other value will leave the polarizations in the file unchanged.
     '''
-    ds = make_dataset(filename, uniformize_freqs)
-    if unpack_samples:
-        ds = unpack(ds, weight)
+    ds = DataFile.from_file(filename, uniformize_freqs=uniformize_freqs)
     if prepare:
         if use_predictor:
             ds = align_with_predictor(ds)

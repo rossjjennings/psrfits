@@ -166,6 +166,17 @@ class DataFile:
 
         return obs
 
+    def copy(self):
+        attrs = {}
+        for attr, value in self.__dict__.items():
+            if isinstance(attr, np.ndarray):
+                attrs[attr] = value.copy()
+            else:
+                attrs[attr] = value
+        data, weights = attrs['data'], attrs['weights']
+        del attrs['data'], attrs['weights']
+        return self.__class__(data, weights, **attrs)
+
     def __repr__(self):
         return (
             f"<psrfits.{self.__class__.__name__}: "
