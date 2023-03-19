@@ -5,6 +5,7 @@ from astropy.time import Time
 from astropy.coordinates import SkyCoord, EarthLocation, Longitude
 import astropy.units as u
 import dask.array as da
+import warnings
 
 from psrfits.attrs import *
 from psrfits.dataset import DataFile
@@ -42,12 +43,16 @@ def load(filename, weight=False, uniformize_freqs=False, prepare=False,
     ds = DataFile.from_file(filename, uniformize_freqs=uniformize_freqs)
     if prepare:
         if use_predictor:
-            ds = align_with_predictor(ds)
+            try:
+                ds.align_with_predictor()
+            except ValueError:
+                warnings.warn('No Tempo2 predictor present! Using fallback dedispersion method')
+                ds.dedisperse()
         else:
-            ds = dedisperse(ds)
-        ds = remove_baseline(ds)
+            ds.dedisperse()
+        ds.remove_baseline()
     if output_polns == 'I':
-        ds = pscrunch(ds)
+        ds.pscrunch()
     elif output_polns == 'IQUV':
-        ds = to_stokes(ds)
+        ds.to_stokes()
     return ds

@@ -1,8 +1,7 @@
 import numpy as np
-#from psrfits.dataset import Dataset
 from psrfits.polarization import get_pols
 
-def remove_baseline(ds, method='avgprof', frac=1/8):
+def remove_baseline(ds, inplace=False, method='avgprof', frac=1/8):
     '''
     Remove the frequency-dependent baseline from an observation.
 
@@ -22,9 +21,9 @@ def remove_baseline(ds, method='avgprof', frac=1/8):
         profile = I.mean(axis=(0, 1))
         opw = offpulse_window(profile, size)
 
-    new_data_vars = dict(ds.data_vars)
+    new_ds = ds if inplace else ds.copy()
     for pol in get_pols(ds):
-        arr = ds.data_vars[pol][-1]
+        arr = getattr(ds, pol)
         if method == 'median':
             baseline = np.median(arr, axis=-1)
         elif method == 'avgprof':
@@ -33,9 +32,9 @@ def remove_baseline(ds, method='avgprof', frac=1/8):
             size = int(frac*ds.phase.size)
             baseline = np.min(rolling_mean(arr, size), axis=-1)
         adjusted_arr = arr - baseline[..., np.newaxis]
-        new_data_vars.update({pol: (['time', 'freq', 'phase'], adjusted_arr)})
+        setattr(new_ds, pol, adjusted_arr)
     
-    return Dataset(new_data_vars, ds.coords, ds.attrs)
+    return new_ds
 
 def offpulse_window(arr, size=None, frac=1/8):
     '''

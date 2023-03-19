@@ -2,6 +2,7 @@ import numpy as np
 from textwrap import indent, dedent
 from datetime import datetime
 from astropy.time import Time
+import astropy.units as u
 
 from .attrcollection import AttrCollection, maybe_missing, if_missing
 
@@ -144,12 +145,12 @@ class HistoryEntry(AttrCollection):
                 'n_polns': table['npol'][i],
                 'n_bins':table['nbin'][i],
                 'bins_per_period': table['nbin_prd'][i],
-                'time_per_bin': table['tbin'][i],
-                'center_freq': table['ctr_freq'][i],
+                'time_per_bin': table['tbin'][i]*u.s,
+                'center_freq': table['ctr_freq'][i]*u.MHz,
                 'n_channels': table['nchan'][i],
-                'channel_bandwidth': table['chan_bw'][i],
-                'DM': table['DM'][i],
-                'RM': table['RM'][i],
+                'channel_bandwidth': table['chan_bw'][i]*u.MHz,
+                'DM': table['DM'][i]*u.pc/u.cm**3,
+                'RM': table['RM'][i]*u.rad/u.m**2,
                 'projection_corrected': bool(table['pr_corr'][i]),
                 'feed_corrected': bool(table['fd_corr'][i]),
                 'backend_corrected': bool(table['be_corr'][i]),

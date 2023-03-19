@@ -9,6 +9,7 @@ from pint import PulsarMJD
 from psrfits.formatting import fmt_items, fmt_array
 from psrfits.attrs import *
 from psrfits.attrs.attrcollection import maybe_missing
+from psrfits import baseline, dispersion, polarization
 from textwrap import indent
 
 class DataFile:
@@ -98,7 +99,6 @@ class DataFile:
         }
 
         attrs.update({
-            'time_per_bin': history_hdu.data['tbin'][-1],
             'lst': Longitude(subint_hdu.data['lst_sub'].copy()/3600, u.hourangle),
             'coords': SkyCoord(
                 subint_hdu.data['ra_sub'].copy(),
@@ -208,6 +208,22 @@ class DataFile:
 
     def all_attrs(self):
         print(fmt_items(self.__dict__))
+
+    def dedisperse(self, DM=None, weight_center_freq=False):
+        dispersion.dedisperse(self, inplace=True, DM=DM, weight_center_freq=weight_center_freq)
+
+    def align_with_predictor(self, extrap=False):
+        dispersion.align_with_predictor(self, inplace=True, extrap=extrap)
+
+    def remove_baseline(self, method='avgprof', frac=1/8):
+        baseline.remove_baseline(self, inplace=True, method=method, frac=frac)
+
+    def pscrunch(self):
+        polarization.pscrunch(self, inplace=True)
+
+    def to_stokes(self):
+        polarization.to_stokes(self, inplace=True)
+
 
 def load_copy(filename, hdu, column):
     '''

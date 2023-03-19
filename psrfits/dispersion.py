@@ -2,7 +2,6 @@ import numpy as np
 from numpy import pi, sin, cos, exp, log, sqrt
 from numpy.fft import rfft, irfft, rfftfreq
 import astropy.units as u
-#from psrfits.dataset import Dataset
 from psrfits.polarization import get_pols
 
 def fft_roll(a, shift):
@@ -36,31 +35,31 @@ def dispersion_dt(ds, DM=None, weight_center_freq=False):
         DM = ds.DM
 
     # TEMPO/Tempo2/PRESTO conventional value (cf. Kulkarni 2020, arXiv:2007.02886)
-    K = 1/2.41e-4 # s MHz**2 cm**3 / pc
+    K = 1/2.41e-4 * u.s * u.MHz**2 * u.cm**3 / u.pc
 
     if weight_center_freq:
         center_freq = weighted_center_freq(ds)
     else:
-        center_freq = ds.center_freq
+        center_freq = ds.history.center_freq
 
-    return K*DM*(ds.freq**-2 - center_freq**-2)
+    return (K*DM*(ds.freq**-2 - center_freq**-2)).to(u.s)
 
-def dedisperse(ds, DM=None, weight_center_freq=False):
+def dedisperse(ds, inplace=False, DM=None, weight_center_freq=False):
     '''
     Dedisperse the data with the given DM.
     If `DM` is `None`, use the DM attribute of `ds`.
     '''
     time_delays = dispersion_dt(ds, DM, weight_center_freq)
     
-    tbin = ds.time_per_bin
+    tbin = ds.history.time_per_bin
     bin_delays = time_delays/tbin
-    
-    new_data_vars = dict(ds.data_vars)
+
+    new_ds = ds if inplace else ds.copy()
     for pol in get_pols(ds):
-        dedispersed_arr = fft_roll(ds.data_vars[pol][-1], -bin_delays)
-        new_data_vars.update({pol: (['time', 'freq', 'phase'], dedispersed_arr)})
+        dedispersed_arr = fft_roll(getattr(ds, pol), -bin_delays)
+        setattr(new_ds, pol, dedispersed_arr)
     
-    return Dataset(new_data_vars, ds.coords, ds.attrs)
+    return new_ds
 
 def channel_phase(ds, extrap=False):
     '''
@@ -69,22 +68,22 @@ def channel_phase(ds, extrap=False):
     if ds.source.predictor is None:
         raise ValueError("No Tempo2 predictor present!")
     phase_offs = np.empty_like(ds.freq)
-    epoch = ds.start_time + ds.time[0]*u.s
+    epoch = ds.epoch[0] # TODO: Check what happens if the file is not tscrunched first
     for i, f in enumerate(ds.freq):
         phase_offs[i] = ds.source.predictor(epoch.mjd_long, f, extrap) % 1
     return phase_offs
 
-def align_with_predictor(ds, extrap=False):
+def align_with_predictor(ds, inplace=False, extrap=False):
     '''
     Dedisperse and align the data using the internal Tempo2 predictor.
     '''
     phase_offs = channel_phase(ds, extrap)
 
-    new_data_vars = dict(ds.data_vars)
+    new_ds = ds if inplace else ds.copy()
     for pol in get_pols(ds):
-        pol_arr = ds.data_vars[pol][-1]
+        pol_arr = getattr(ds, pol)
         nbin = pol_arr.shape[-1]
         dedispersed_arr = fft_roll(pol_arr, nbin*phase_offs)
-        new_data_vars.update({pol: (['time', 'freq', 'phase'], dedispersed_arr)})
+        setattr(new_ds, pol, dedispersed_arr)
 
-    return Dataset(new_data_vars, ds.coords, ds.attrs)
+    return new_ds
