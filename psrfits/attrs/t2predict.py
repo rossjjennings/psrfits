@@ -1,15 +1,18 @@
 import numpy as np
 from numpy.polynomial import chebyshev
+from astropy.time import Time
+import astropy.units as u
+from pint import PulsarMJD
 
 class ChebyModel:
-    def __init__(self, psrname, sitename, mjd_start, mjd_end, freq_start, freq_end,
+    def __init__(self, psrname, sitename, start_time, end_time, start_freq, end_freq,
                  dispersion_constant, coeffs):
         self.psrname = psrname
         self.sitename = sitename
-        self.mjd_start = mjd_start
-        self.mjd_end = mjd_end
-        self.freq_start = freq_start
-        self.freq_end = freq_end
+        self.start_time = start_time
+        self.end_time = end_time
+        self.start_freq = start_freq
+        self.end_freq = end_freq
         self.dispersion_constant = dispersion_constant
         self.coeffs = coeffs
 
@@ -25,13 +28,13 @@ class ChebyModel:
             elif parts[0] == 'SITENAME':
                 args['sitename'] = parts[1]
             elif parts[0] == 'TIME_RANGE':
-                args['mjd_start'] = np.longdouble(parts[1])
-                args['mjd_end'] = np.longdouble(parts[2])
+                args['start_time'] = Time(np.longdouble(parts[1]), format='pulsar_mjd_long')
+                args['end_time'] = Time(np.longdouble(parts[2]), format='pulsar_mjd_long')
             elif parts[0] == 'FREQ_RANGE':
-                args['freq_start'] = np.longdouble(parts[1])
-                args['freq_end'] = np.longdouble(parts[2])
+                args['start_freq'] = np.longdouble(parts[1])*u.MHz
+                args['end_freq'] = np.longdouble(parts[2])*u.MHz
             elif parts[0] == 'DISPERSION_CONSTANT':
-                args['dispersion_constant'] = np.longdouble(parts[1])
+                args['dispersion_constant'] = np.longdouble(parts[1])*u.MHz**2
             elif parts[0] == 'NCOEFF_TIME':
                 ncoeff_time = int(parts[1])
             elif parts[0] == 'NCOEFF_FREQ':
@@ -51,34 +54,51 @@ class ChebyModel:
         args['coeffs'] = coeffs
         return cls(**args)
 
-    def __call__(self, mjd, freq, check_bounds=True):
-        x, y, coeffs = self.chebval_args(mjd, freq, check_bounds)
+    def __call__(self, time, freq, out_of_bounds='error'):
+        x, y, coeffs = self.chebval_args(time, freq, out_of_bounds)
 
         chebval = chebyshev.chebval2d(x, y, coeffs)
-        phase = self.dispersion_constant*freq**-2 + chebval
+        phase = (self.dispersion_constant*freq**-2).to('').value + chebval
         return phase
 
-    def f0(self, mjd, freq, check_bounds=True):
-        x, y, coeffs = self.chebval_args(mjd, freq, check_bounds)
+    def f0(self, time, freq, out_of_bounds='error'):
+        x, y, coeffs = self.chebval_args(time, freq, out_of_bounds)
 
         coeffs = chebyshev.chebder(coeffs, axis=0)
         chebval = chebyshev.chebval2d(x, y, coeffs)
-        f0 = chebval * 2/(self.mjd_end - self.mjd_start) / 86400 # convert to cycles/sec
+
+        # convert to cycles/sec
+        f0 = chebval * 2/(self.end_time.mjd_long - self.start_time.mjd_long) / 86400
         return f0
 
-    def covers(self, mjd, freq):
-        return ((self.mjd_start <= mjd <= self.mjd_end) and
-                (min(self.freq_start, self.freq_end) <= freq <= max(self.freq_start, self.freq_end)))
+    def covers(self, time, freq):
+        time_covered = (time >= self.start_time) & (time <= self.end_time)
+        min_freq = min(self.start_freq, self.end_freq)
+        max_freq = max(self.start_freq, self.end_freq)
+        freq_covered = (freq >= min_freq) & (freq <= max_freq)
+        return time_covered & freq_covered
 
-    def chebval_args(self, mjd, freq, check_bounds=True):
-        if check_bounds and (mjd < self.mjd_start or mjd > self.mjd_end):
-            raise ValueError('MJD out of bounds.')
-        if check_bounds and (freq < min(self.freq_start, self.freq_end) or freq > max(self.freq_start, self.freq_end)):
-            raise ValueError('Frequency out of bounds.')
-
+    def chebval_args(self, time, freq, out_of_bounds='error'):
         # Scale MJD and frequency to within [-1, 1]
-        x = 2*(mjd - self.mjd_start)/(self.mjd_end - self.mjd_start) - 1
-        y = 2*(freq - self.freq_start)/(self.freq_end - self.freq_start) - 1
+        time_diff = time.mjd_long - self.start_time.mjd_long
+        time_span = self.end_time.mjd_long - self.start_time.mjd_long
+        freq_diff = freq - self.start_freq
+        freq_span = self.end_freq - self.start_freq
+        x = 2*time_diff/time_span - 1
+        y = 2*(freq_diff/freq_span).to('').value - 1
+
+        if np.any(~self.covers(time, freq)):
+            if out_of_bounds == 'error':
+                raise ValueError('Some points are out of bounds')
+            elif out_of_bounds == 'extrap':
+                pass
+            elif out_of_bounds == 'nan':
+                bad_times = (time_diff/time_span < 0) | (time_diff/time_span > 1)
+                bad_freqs = (time_diff/time_span < 0) | (time_diff/time_span > 1)
+                x[bad_times] = np.nan
+                y[bad_freqs] = np.nan
+
+        x, y = np.broadcast_arrays(x, y)
 
         # Account for differing conventions:
         # Tempo2 uses T_0(x) = 1/2, while Numpy uses T_0(x) = 1.
@@ -92,13 +112,17 @@ class ChebyModel:
         description = "ChebyModel BEGIN\n"
         description += f"PSRNAME {self.psrname}\n"
         description += f"SITENAME {self.sitename}\n"
-        description += f"TIME_RANGE {np.format_float_scientific(self.mjd_start)} {np.format_float_scientific(self.mjd_end)}\n"
-        description += f"FREQ_RANGE {np.format_float_scientific(self.freq_start)} {np.format_float_scientific(self.freq_end)}\n"
+        description += (f"TIME_RANGE {np.format_float_scientific(self.start_time.mjd_long)} "
+                        f"{np.format_float_scientific(self.end_time.mjd_long)}\n")
+        description += (f"FREQ_RANGE {np.format_float_scientific(self.start_freq.to(u.MHz).value)} "
+                        f"{np.format_float_scientific(self.end_freq.to(u.MHz).value)}\n")
         description += f"DISPERSION_CONSTANT {np.format_float_scientific(self.dispersion_constant)}\n"
         description += f"NCOEFF_TIME {self.coeffs.shape[0]}\n"
         description += f"NCOEFF_FREQ {self.coeffs.shape[1]}\n"
         for coeff_set in self.coeffs:
-            description += f"COEFFS " + " ".join(f"{np.format_float_scientific(coeff)}" for coeff in coeff_set) + "\n"
+            description += (f"COEFFS "
+                            + " ".join(f"{np.format_float_scientific(coeff)}" for coeff in coeff_set)
+                            + "\n")
         description += "ChebyModel END"
         return description
 
@@ -126,19 +150,24 @@ class ChebyModelSet:
             raise ValueError(f'Number of segments ({len(segments)}) does not match specification ({nsegments}).')
         return cls(segments)
 
-    def __call__(self, mjd, freq, extrap=False):
-        segment = self.covering_segment(mjd, freq, extrap)
-        return segment(mjd, freq, check_bounds=(not extrap))
+    def __call__(self, time, freq, out_of_bounds='error'):
+        segment = self.covering_segment(time, freq, out_of_bounds)
+        return segment(time, freq, out_of_bounds)
 
-    def f0(self, mjd, freq, extrap=False):
-        segment = self.covering_segment(mjd, freq, extrap)
-        return segment.f0(mjd, freq, check_bounds=(not extrap))
+    def f0(self, time, freq, out_of_bounds='error'):
+        segment = self.covering_segment(time, freq, out_of_bounds)
+        return segment.f0(time, freq, out_of_bounds)
 
-    def covers(self, mjd, freq):
-        return any(segment.covers(mjd, freq) for segment in self.segments)
+    def covers(self, time, freq):
+        return np.any([segment.covers(time, freq) for segment in self.segments], axis=0)
 
-    def covering_segment(self, mjd, freq, extrap=False):
-        covering_segments = [segment.covers(mjd, freq) for segment in self.segments]
+    def covering_segment(self, time, freq, extrap=False):
+        segment_centers = Time([
+            segment.start_time + (segment.end_time - segment.start_time)/2 for segment in self.segments
+        ])
+        closest_segment = np.argmin(np.abs(time[..., np.newaxis].mjd_long - segment_centers.mjd_long), axis=-1)
+        covered = np.array([segment.covers(mjd, freq) for segment in self.segments])
+        covering_segments = np.where(covered)
         if not any(covering_segments):
             if extrap:
                 mjd_diffs = [mjd - np.abs((segment.mjd_start + segment.mjd_end)/2) for segment in self.segments]
