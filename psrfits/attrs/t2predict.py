@@ -5,6 +5,10 @@ import astropy.units as u
 from pint import PulsarMJD
 
 class ChebyModel:
+    """
+    A model of pulse phase as a function of frequency and time defined by a
+    2-D Chebyshev Polynomial combined with a dispersion constant, as used by Tempo2.
+    """
     def __init__(self, psrname, sitename, start_time, end_time, start_freq, end_freq,
                  dispersion_constant, coeffs):
         self.psrname = psrname
@@ -18,6 +22,9 @@ class ChebyModel:
 
     @classmethod
     def parse(cls, lines):
+        """
+        Construct a ChebyModel object by reading lines from a Tempo2 predictor file.
+        """
         args = {}
         coeffs = []
         i = 0
@@ -55,6 +62,18 @@ class ChebyModel:
         return cls(**args)
 
     def __call__(self, time, freq, out_of_bounds='error'):
+        """
+        Evaluate the pulse phase at a given time and frequency.
+
+        Parameters
+        ----------
+        time, freq: Time as an `astropy.Time` object, and frequency, as a `Quantity`.
+                    Values should have shapes that can be broadcast together.
+        out_of_bounds: How to treat out-of-bounds values. Possible values are:
+                    'error' (raise an exception, the default),
+                    'extrap' (attempt to extrapolate), and
+                    'nan' (return not-a-number).
+        """
         x, y, coeffs = self.chebval_args(time, freq, out_of_bounds)
 
         chebval = chebyshev.chebval2d(x, y, coeffs)
@@ -62,6 +81,18 @@ class ChebyModel:
         return phase
 
     def f0(self, time, freq, out_of_bounds='error'):
+        """
+        Evaluate the pulse frequency at a given time and radio frequency.
+
+        Parameters
+        ----------
+        time, freq: Time as an `astropy.Time` object, and frequency, as a `Quantity`.
+                    Values should have shapes that can be broadcast together.
+        out_of_bounds: How to treat out-of-bounds values. Possible values are:
+                    'error' (raise an exception, the default),
+                    'extrap' (attempt to extrapolate), and
+                    'nan' (return not-a-number).
+        """
         x, y, coeffs = self.chebval_args(time, freq, out_of_bounds)
 
         coeffs = chebyshev.chebder(coeffs, axis=0)
@@ -72,6 +103,14 @@ class ChebyModel:
         return f0
 
     def covers(self, time, freq):
+        """
+        Determine whether this model segment covers a given combination of time and frequency.
+
+        Parameters
+        ----------
+        time, freq: Time as an `astropy.Time` object, and frequency, as a `Quantity`.
+                    Values should have shapes that can be broadcast together.
+        """
         time_covered = (time >= self.start_time) & (time <= self.end_time)
         min_freq = min(self.start_freq, self.end_freq)
         max_freq = max(self.start_freq, self.end_freq)
@@ -109,6 +148,9 @@ class ChebyModel:
         return x, y, coeffs
 
     def describe(self):
+        """
+        Return a string describing this model in the format of a Tempo2 predictor file.
+        """
         description = "ChebyModel BEGIN\n"
         description += f"PSRNAME {self.psrname}\n"
         description += f"SITENAME {self.sitename}\n"
@@ -127,11 +169,19 @@ class ChebyModel:
         return description
 
 class ChebyModelSet:
+    """
+    A model of pulse phase as a function of frequency and time, defined by a set of segments
+    each consisting of a 2-D Chebyshev Polynomial combined with a dispersion constant,
+    as defined in a Tempo2 predictor file.
+    """
     def __init__(self, segments):
         self.segments = segments
 
     @classmethod
     def parse(cls, lines):
+        """
+        Construct a ChebyModelSet object by reading lines from a Tempo2 predictor file.
+        """
         segments = []
         for line in lines:
             parts = line.split()
@@ -151,39 +201,81 @@ class ChebyModelSet:
         return cls(segments)
 
     def __call__(self, time, freq, out_of_bounds='error'):
-        segment = self.covering_segment(time, freq, out_of_bounds)
+        """
+        Evaluate the pulse phase at a given time and frequency.
+
+        Parameters
+        ----------
+        time, freq: Time as an `astropy.Time` object, and frequency, as a `Quantity`.
+                    Values should have shapes that can be broadcast together.
+        out_of_bounds: How to treat out-of-bounds values. Possible values are:
+                    'error' (raise an exception, the default),
+                    'extrap' (attempt to extrapolate), and
+                    'nan' (return not-a-number).
+        """
+        time_broadcast, freq_broadcast = np.broadcast_arrays(time, freq)
+        phase = np.empty(np.broadcast_shapes(time.shape, freq.shape), dtype=np.float128)
+
+        covering_segment = self.covering_segment(time, freq, out_of_bounds)
+        for i, segment in enumerate(self.segments):
+            sl = (covering_segment == i)
+            phase[sl] = segment(time_broadcast[sl], freq_broadcast[sl], out_of_bounds)
+
         return segment(time, freq, out_of_bounds)
 
     def f0(self, time, freq, out_of_bounds='error'):
+        """
+        Evaluate the pulse frequency at a given time and radio frequency.
+
+        Parameters
+        ----------
+        time, freq: Time as an `astropy.Time` object, and frequency, as a `Quantity`.
+                    Values should have shapes that can be broadcast together.
+        out_of_bounds: How to treat out-of-bounds values. Possible values are:
+                    'error' (raise an exception, the default),
+                    'extrap' (attempt to extrapolate), and
+                    'nan' (return not-a-number).
+        """
         segment = self.covering_segment(time, freq, out_of_bounds)
         return segment.f0(time, freq, out_of_bounds)
 
     def covers(self, time, freq):
+        """
+        Determine whether this model covers a given combination of time and frequency.
+
+        Parameters
+        ----------
+        time, freq: Time as an `astropy.Time` object, and frequency, as a `Quantity`.
+                    Values should have shapes that can be broadcast together.
+        """
         return np.any([segment.covers(time, freq) for segment in self.segments], axis=0)
 
-    def covering_segment(self, time, freq, extrap=False):
+    def covering_segment(self, time, freq):
+        """
+        Return an array containing the index of the segment covering each input.
+        If multiple segments cover the input, the segment whose center is closest in time
+        to the input will be returned. If no segments cover the input, the return value will
+        be negative, but still interpretable as the index of the closest segment.
+
+        Parameters
+        ----------
+        time, freq: Time as an `astropy.Time` object, and frequency, as a `Quantity`.
+                    Values should have shapes that can be broadcast together.
+        """
         segment_centers = Time([
             segment.start_time + (segment.end_time - segment.start_time)/2 for segment in self.segments
         ])
         closest_segment = np.argmin(np.abs(time[..., np.newaxis].mjd_long - segment_centers.mjd_long), axis=-1)
-        covered = np.array([segment.covers(mjd, freq) for segment in self.segments])
-        covering_segments = np.where(covered)
-        if not any(covering_segments):
-            if extrap:
-                mjd_diffs = [mjd - np.abs((segment.mjd_start + segment.mjd_end)/2) for segment in self.segments]
-                segment = self.segments[np.argmin(mjd_diffs)]
-            else:
-                raise ValueError('MJD and frequency not covered by any segments.')
-        elif sum(covering_segments) > 1:
-            # Multiple segments cover this MJD and frequency
-            relevant_segments = [segment for segment, covers in zip(self.segments, covering_segments) if covers]
-            mjd_diffs = [mjd - np.abs((segment.mjd_start + segment.mjd_end)/2) for segment in relevant_segments]
-            segment = relevant_segments[np.argmin(mjd_diffs)]
-        else:
-            segment = self.segments[covering_segments.index(True)]
-        return segment
+        out_of_bounds = np.zeros(broadcast_shapes(time.shape, freq.shape), dtype=bool)
+        for i, segment in enumerate(self.segments):
+            out_of_bounds |= (closest_segment == i) & ~segment.covers(time, freq)
+        closest_segment[out_of_bounds] = -len(self.segments) + closest_segment[out_of_bounds]
+        return closest_segment
 
     def describe(self):
+        """
+        Return a string describing this model in the format of a Tempo2 predictor file.
+        """
         description = f"ChebyModelSet {len(self.segments)} segments"
         for segment in self.segments:
             description += '\n'
