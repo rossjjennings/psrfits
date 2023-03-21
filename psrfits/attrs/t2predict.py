@@ -158,7 +158,8 @@ class ChebyModel:
                         f"{np.format_float_scientific(self.end_time.mjd_long)}\n")
         description += (f"FREQ_RANGE {np.format_float_scientific(self.start_freq.to(u.MHz).value)} "
                         f"{np.format_float_scientific(self.end_freq.to(u.MHz).value)}\n")
-        description += f"DISPERSION_CONSTANT {np.format_float_scientific(self.dispersion_constant)}\n"
+        description += (f"DISPERSION_CONSTANT "
+                        f"{np.format_float_scientific(self.dispersion_constant.to(u.MHz**2).value)}\n")
         description += f"NCOEFF_TIME {self.coeffs.shape[0]}\n"
         description += f"NCOEFF_FREQ {self.coeffs.shape[1]}\n"
         for coeff_set in self.coeffs:
