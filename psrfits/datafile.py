@@ -9,7 +9,7 @@ from pint import PulsarMJD
 from psrfits.formatting import fmt_items, fmt_array
 from psrfits.attrs import *
 from psrfits.attrs.attrcollection import maybe_missing
-from psrfits import baseline, dispersion, polarization
+from psrfits import baseline, dispersion, polarization, plots
 from textwrap import indent
 
 class DataFile:
@@ -282,6 +282,49 @@ class DataFile:
         '''
         polarization.to_stokes(self, inplace=True)
 
+    def plot_profile(self, profile, ax=None, **kwargs):
+        '''
+        Make a line plot of a supplied pulse profile using metadata from this
+        Dataset. Additional keyword arguments will be passed on to plt.plot().
+
+        Parameters
+        ----------
+        ds:      Dataset to use
+        profile: Profile (array of data vs. pulse phase) to plot
+        ax:      Axes in which to plot. If `None`, the current Axes will be used.
+        '''
+        plots.plot_profile(self, profile, ax, **kwargs)
+
+    def plot_portrait(self, profile, ax=None, sym_lim=False, vmin=None, vmax=None, **kwargs):
+        '''
+        Make a pseudocolor plot of a supplied pulse portrait (pulse phase vs. frequency)
+        using metadata from this Dataset. Additional keyword arguments will be passed
+        on to plt.pcolormesh().
+
+        Parameters
+        ----------
+        portrait: Portrait (array of data vs. frequency and phase) to plot
+        ax:       Axes in which to plot. If `None`, the current Axes will be used.
+        sym_lim:  Symmetrize the colorbar limits around zero. Useful when plotting
+                  signed data using a diverging colormap.
+        '''
+        plots.plot_portrait(self, profile, ax, sym_lim, vmin, vmax, **kwargs)
+
+    def plot_pulsetrain(self, pulsetrain, ax=None, sym_lim=False, vmin=None, vmax=None, **kwargs):
+        '''
+        Make a pseudocolor plot of a supplied "pulse train" (i.e., time series of profiles
+        matching the length of the underlying data, a bit of a misnomer) using metadata
+        from this Dataset. Additional keyword arguments will be passed on to plt.pcolormesh().
+
+        Parameters
+        ----------
+        ds:      Dataset to use
+        profile: Profile (array of data vs. pulse phase) to plot
+        ax:      Axes in which to plot. If `None`, the current Axes will be used.
+        sym_lim: Symmetrize the colorbar limits around zero. Useful when plotting
+                 signed data using a diverging colormap.
+        '''
+        plots.plot_pulsetrain(self, pulsetrain, ax, sym_lim, vmin, vmax, **kwargs)
 
 def load_copy(filename, hdu, column):
     '''
