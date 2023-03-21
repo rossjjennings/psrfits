@@ -25,6 +25,7 @@ def avg_portrait(ds, poln='I', start_mjd=-np.inf, stop_mjd=np.inf, use_weights=T
         portrait /= np.nanmean(weights, axis=0)
     else:
         portrait = np.nanmean(data)
+
     if hasattr(portrait, 'compute') and compute:
         if progress:
             with ProgressBar():
@@ -54,7 +55,7 @@ def avg_profile(ds, poln='I', low_freq=-np.inf, high_freq=np.inf, start_mjd=-np.
     valid_mjds = (ds.epoch.mjd >= start_mjd) & (ds.epoch.mjd < stop_mjd)
     valid_freqs = (ds.freq >= low_freq) & (ds.freq < high_freq)
 
-    # appease dask by only fancy indexing on one axis at a time
+    # appease Dask by only fancy indexing on one axis at a time
     data = getattr(ds, poln)[valid_mjds]
     data = data[:, valid_freqs]
     if use_weights:
@@ -64,6 +65,7 @@ def avg_profile(ds, poln='I', low_freq=-np.inf, high_freq=np.inf, start_mjd=-np.
         profile /= np.nanmean(weights, axis=(0, 1))
     else:
         profile = np.nanmean(data, axis=(0, 1))
+
     if hasattr(profile, 'compute') and compute:
         if progress:
             with ProgressBar():
@@ -97,6 +99,7 @@ def avg_pulsetrain(ds, poln='I', low_freq=-np.inf, high_freq=np.inf, use_weights
         pulsetrain /= np.nanmean(weights, axis=1)
     else:
         pulsetrain = np.nanmean(data, axis=1)
+
     if hasattr(pulsetrain, 'compute') and compute:
         if progress:
             with ProgressBar():
