@@ -212,8 +212,8 @@ class DataFile:
     def dedisperse(self, DM=None, weight_center_freq=False):
         dispersion.dedisperse(self, inplace=True, DM=DM, weight_center_freq=weight_center_freq)
 
-    def align_with_predictor(self, extrap=False):
-        dispersion.align_with_predictor(self, inplace=True, extrap=extrap)
+    def align_with_predictor(self, out_of_bounds='error'):
+        dispersion.align_with_predictor(self, inplace=True, out_of_bounds=out_of_bounds)
 
     def remove_baseline(self, method='avgprof', frac=1/8):
         baseline.remove_baseline(self, inplace=True, method=method, frac=frac)

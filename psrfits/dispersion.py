@@ -3,6 +3,7 @@ from numpy import pi, sin, cos, exp, log, sqrt
 from numpy.fft import rfft, irfft, rfftfreq
 import astropy.units as u
 from psrfits.polarization import get_pols
+import dask.array as da
 
 def fft_roll(a, shift):
     '''
@@ -61,23 +62,24 @@ def dedisperse(ds, inplace=False, DM=None, weight_center_freq=False):
     
     return new_ds
 
-def channel_phase(ds, extrap=False):
+def channel_phase(ds, out_of_bounds='error'):
     '''
     Compute the phase offset in each channel from the internal Tempo2 predictor.
     '''
     if ds.source.predictor is None:
         raise ValueError("No Tempo2 predictor present!")
-    phase_offs = np.empty_like(ds.freq)
-    epoch = ds.epoch[0] # TODO: Check what happens if the file is not tscrunched first
-    for i, f in enumerate(ds.freq):
-        phase_offs[i] = ds.source.predictor(epoch.mjd_long, f, extrap) % 1
+    phase_offs = ds.source.predictor(ds.epoch[:, np.newaxis], ds.freq, out_of_bounds) % 1
     return phase_offs
 
-def align_with_predictor(ds, inplace=False, extrap=False):
+def align_with_predictor(ds, inplace=False, out_of_bounds='error'):
     '''
     Dedisperse and align the data using the internal Tempo2 predictor.
     '''
-    phase_offs = channel_phase(ds, extrap)
+    phase_offs = np.float64(channel_phase(ds, out_of_bounds))
+
+    # Converting phase_offs to a Dask array first speeds this up significantly. IDK why...
+    if any(isinstance(getattr(ds, pol), da.Array) for pol in get_pols(ds)):
+        phase_offs = da.from_array(phase_offs)
 
     new_ds = ds if inplace else ds.copy()
     for pol in get_pols(ds):
