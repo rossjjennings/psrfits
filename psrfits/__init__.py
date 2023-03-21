@@ -1,4 +1,5 @@
 from psrfits.datafile import DataFile
+from psrfits.dataset import Dataset
 from psrfits.loading import load
 from psrfits.saving import save
 from psrfits.dispersion import (
