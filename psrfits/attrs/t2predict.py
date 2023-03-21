@@ -221,7 +221,7 @@ class ChebyModelSet:
             sl = (closest_segment == i)
             phase[sl] = segment(time_broadcast[sl], freq_broadcast[sl], out_of_bounds)
 
-        return phase
+        return phase[()] # turns 0d arrays into scalars, otherwise harmless
 
     def f0(self, time, freq, out_of_bounds='error'):
         """
@@ -244,7 +244,7 @@ class ChebyModelSet:
             sl = (closest_segment == i)
             f0[sl] = segment.f0(time_broadcast[sl], freq_broadcast[sl], out_of_bounds)
 
-        return f0
+        return f0[()] # turns 0d arrays into scalars, otherwise harmless
 
     def covers(self, time, freq):
         """
