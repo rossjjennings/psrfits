@@ -213,15 +213,15 @@ class ChebyModelSet:
                     'extrap' (attempt to extrapolate), and
                     'nan' (return not-a-number).
         """
-        time_broadcast, freq_broadcast = np.broadcast_arrays(time, freq)
+        time_broadcast, freq_broadcast = broadcast_time_freq(time, freq)
         phase = np.empty(np.broadcast_shapes(time.shape, freq.shape), dtype=np.float128)
 
-        covering_segment = self.covering_segment(time, freq, out_of_bounds)
+        closest_segment = self.closest_segment(time, freq)
         for i, segment in enumerate(self.segments):
-            sl = (covering_segment == i)
+            sl = (closest_segment == i)
             phase[sl] = segment(time_broadcast[sl], freq_broadcast[sl], out_of_bounds)
 
-        return segment(time, freq, out_of_bounds)
+        return phase
 
     def f0(self, time, freq, out_of_bounds='error'):
         """
@@ -236,8 +236,15 @@ class ChebyModelSet:
                     'extrap' (attempt to extrapolate), and
                     'nan' (return not-a-number).
         """
-        segment = self.covering_segment(time, freq, out_of_bounds)
-        return segment.f0(time, freq, out_of_bounds)
+        time_broadcast, freq_broadcast = broadcast_time_freq(time, freq)
+        phase = np.empty(np.broadcast_shapes(time.shape, freq.shape), dtype=np.float128)
+
+        closest_segment = self.closest_segment(time, freq)
+        for i, segment in enumerate(self.segments):
+            sl = (closest_segment == i)
+            f0[sl] = segment.f0(time_broadcast[sl], freq_broadcast[sl], out_of_bounds)
+
+        return f0
 
     def covers(self, time, freq):
         """
@@ -250,12 +257,11 @@ class ChebyModelSet:
         """
         return np.any([segment.covers(time, freq) for segment in self.segments], axis=0)
 
-    def covering_segment(self, time, freq):
+    def closest_segment(self, time, freq):
         """
         Return an array containing the index of the segment covering each input.
         If multiple segments cover the input, the segment whose center is closest in time
-        to the input will be returned. If no segments cover the input, the return value will
-        be negative, but still interpretable as the index of the closest segment.
+        to the input will be returned.
 
         Parameters
         ----------
@@ -266,10 +272,7 @@ class ChebyModelSet:
             segment.start_time + (segment.end_time - segment.start_time)/2 for segment in self.segments
         ])
         closest_segment = np.argmin(np.abs(time[..., np.newaxis].mjd_long - segment_centers.mjd_long), axis=-1)
-        out_of_bounds = np.zeros(broadcast_shapes(time.shape, freq.shape), dtype=bool)
-        for i, segment in enumerate(self.segments):
-            out_of_bounds |= (closest_segment == i) & ~segment.covers(time, freq)
-        closest_segment[out_of_bounds] = -len(self.segments) + closest_segment[out_of_bounds]
+        closest_segment, _ = np.broadcast_arrays(closest_segment, freq.value)
         return closest_segment
 
     def describe(self):
@@ -281,3 +284,10 @@ class ChebyModelSet:
             description += '\n'
             description += segment.describe()
         return description
+
+def broadcast_time_freq(time, freq):
+    jd1_broadcast, jd2_broadcast, freq_broadcast = np.broadcast_arrays(time.jd1, time.jd2, freq.value)
+    time_broadcast = Time(jd1_broadcast, jd2_broadcast, format='jd')
+    time_broadcast.format = time.format
+    freq_broadcast = u.Quantity(freq_broadcast, freq.unit)
+    return time_broadcast, freq_broadcast
