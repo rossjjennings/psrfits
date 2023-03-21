@@ -1,19 +1,10 @@
 import numpy as np
 import warnings
-from astropy.io import fits
-from astropy.time import Time
-from astropy.coordinates import SkyCoord, EarthLocation, Longitude
-import astropy.units as u
-import dask.array as da
-import warnings
 
-from psrfits.attrs import *
-from psrfits.dataset import DataFile
-from psrfits.attrs.attrcollection import maybe_missing
-from psrfits.polarization import get_pols, pscrunch, to_stokes
+from psrfits.datafile import DataFile
+from psrfits.polarization import pscrunch, to_stokes
 from psrfits.dispersion import dedisperse, align_with_predictor
 from psrfits.baseline import remove_baseline
-from psrfits.uniform import uniformize
 
 def load(filename, weight=False, uniformize_freqs=False, prepare=False,
          use_predictor=True, baseline_method='avgprof', output_polns=None):

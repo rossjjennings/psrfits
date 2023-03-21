@@ -13,6 +13,9 @@ from psrfits import baseline, dispersion, polarization
 from textwrap import indent
 
 class DataFile:
+    '''
+    An object representing a PSRFITS file.
+    '''
     def __init__(self, data, weights, **attrs):
         self.data = data
         self.weights = weights
@@ -22,7 +25,17 @@ class DataFile:
     @classmethod
     def from_file(cls, filename, loader='lazy', uniformize_freqs=False):
         '''
-        Construct a Observation object from a PSRFITS file.
+        Construct a DataFile object from a PSRFITS file.
+
+        Parameters
+        ----------
+        filename: Name of the file to read data from.
+        loader: Possible values are 'lazy', 'memmap', or 'eager'. For 'lazy' (the default),
+                the data will be read into a Dask array using dask.delayed, and read only
+                when necessary. No file handle will be retained. For 'memmap', the data will
+                be memory-mapped and read into a Dask array, retaining a file handle. For
+                'eager', the data will be read into memory immediately.
+        uniformize_freqs: Whether to attempt to correct over-rounded frequency values.
         '''
         hdulist = fits.open(filename)
         primary_hdu = hdulist['primary']
@@ -167,6 +180,11 @@ class DataFile:
         return obs
 
     def copy(self):
+        '''
+        Make a copy of this DataFile. This is a "deep copy" in the sense that
+        all attributes are copied, even those that are Numpy or Dask arrays, but
+        Dask arrays will continue to point to the same data on disk.
+        '''
         attrs = {}
         for attr, value in self.__dict__.items():
             if isinstance(attr, np.ndarray):
@@ -187,6 +205,9 @@ class DataFile:
         )
 
     def info(self):
+        '''
+        Print a summary of the data contained in this object.
+        '''
         nsub, npol, nchan, nbin = self.data.shape
         info_items = {
             'Source': self.source.name,
@@ -207,21 +228,58 @@ class DataFile:
         print(fmt_items(info_items))
 
     def all_attrs(self):
+        '''
+        Print a formatted list of all attributes of this object.
+        '''
         print(fmt_items(self.__dict__))
 
     def dedisperse(self, DM=None, weight_center_freq=False):
+        '''
+        Dedisperse the data with the given DM.
+        If `DM` is `None`, use the DM attribute of `ds`.
+        '''
         dispersion.dedisperse(self, inplace=True, DM=DM, weight_center_freq=weight_center_freq)
 
     def align_with_predictor(self, out_of_bounds='error'):
+        '''
+        Dedisperse and align the data using the internal Tempo2 predictor.
+        '''
         dispersion.align_with_predictor(self, inplace=True, out_of_bounds=out_of_bounds)
 
     def remove_baseline(self, method='avgprof', frac=1/8):
+        '''
+        Remove the frequency-dependent baseline from an observation.
+
+        Parameters
+        ----------
+        method (default: 'avgprof'): The method used to determine the baseline level.
+            Options are 'avgprof', which takes the mean of an "off-pulse" region
+            automatically determined from the average total-intensity profile,
+            'offpulse', which is uses the off-pulse mean for each channel separately,
+            and 'median', which takes the median of the entire profile in each channel
+            separately.
+        frac (default: 1/8): The fraction of the profile to use as an off-pulse window.
+        '''
         baseline.remove_baseline(self, inplace=True, method=method, frac=frac)
 
+    def get_pols(self):
+        '''
+        Return a list of the polarizations present in the data.
+        '''
+        polarization.get_pols(self)
+
     def pscrunch(self):
+        '''
+        Return a dataset containing only the total intensity component of the input.
+        '''
         polarization.pscrunch(self, inplace=True)
 
     def to_stokes(self):
+        '''
+        Transform coherence (AABBCRCI) data to Stokes parameters (IQUV).
+        If input is already Stokes, leave it alone.
+        If input has one or two polarizations, return I only.
+        '''
         polarization.to_stokes(self, inplace=True)
 
 
