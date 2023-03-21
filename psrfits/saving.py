@@ -12,9 +12,9 @@ import os.path
 from .attrs.attrcollection import if_missing
 from .polarization import get_pols
 
-def save(filename, ds):
+def save(filename, ds, overwrite=False):
     hdul = to_hdulist(ds)
-    hdul.writeto(filename)
+    hdul.writeto(filename, overwrite=overwrite)
 
 def to_hdulist(ds):
     '''
@@ -51,10 +51,10 @@ def construct_primary_hdu(ds):
         'fitstype': 'PSRFITS',
         'hdrver': '6.1',
         'date': datetime.strftime(datetime.now(), '%Y-%m-%dT%H:%M:%S'),
-        'obsfreq': ds.frequency,
-        'obsbw': ds.bandwidth,
+        'obsfreq': ds.center_freq.to(u.MHz).value,
+        'obsbw': ds.bandwidth.to(u.MHz).value,
         'obsnchan': ds.history[0].n_channels,
-        'chan_dm': ds.DM,
+        'chan_dm': ds.DM.to(u.pc/u.cm**3).value,
         'src_name': ds.source.name,
         'stt_imjd': imjd,
         'stt_smjd': int(smjd),
@@ -142,27 +142,7 @@ def construct_subint_hdu(ds):
     '''
     Construct Subintegration HDU
     '''
-    if hasattr(ds, "ra") and hasattr(ds, "dec"):
-        ra = ds.ra
-        dec = ds.dec
-    else:
-        coords = ds.observation.coords
-        ra_val = coords.ra.to(u.deg).value
-        dec_val = coords.dec.to(u.deg).value
-        ra = np.full_like(ds.time, ra_val)
-        dec = np.full_like(ds.time, dec_val)
-    
-    if hasattr(ds, "glon") and hasattr(ds, "glat"):
-        glon = ds.glon
-        glat = ds.glat
-    else:
-        coords = ds.observation.coords
-        l_val = coords.transform_to(Galactic).l.to(u.deg).value
-        b_val = coords.transform_to(Galactic).b.to(u.deg).value
-        glon = np.full_like(ds.time, l_val)
-        glat = np.full_like(ds.time, b_val)
-    
-    data = np.array([getattr(ds, pol).data for pol in get_pols(ds)])
+    data = np.stack([getattr(ds, pol) for pol in get_pols(ds)])
     data = np.swapaxes(data, 0, 1)
     mins = np.min(data, axis=-1)
     maxes = np.max(data, axis=-1)
@@ -176,25 +156,25 @@ def construct_subint_hdu(ds):
     coords = ds.observation.coords
     subint_data = np.rec.fromarrays(
         [
-            np.arange(ds.time.size),
+            ds.index,
             ds.duration.data,
-            ds.time.data,
-            ds.lst.data if hasattr(ds, "lst") else np.zeros_like(ds.time),
-            ra,
-            dec,
-            glon,
-            glat,
-            ds.feed_angle if hasattr(ds, "feed_angle") else np.zeros_like(ds.time),
-            ds.pos_angle if hasattr(ds, "pos_angle") else np.zeros_like(ds.time),
-            ds.par_angle if hasattr(ds, "par_angle") else np.zeros_like(ds.time),
-            ds.az.data if hasattr(ds, "az") else np.zeros_like(ds.time),
-            ds.zen.data if hasattr(ds, "zen") else np.zeros_like(ds.time),
-            ds.aux_dm if hasattr(ds, "aux_dm") else np.zeros_like(ds.time),
-            ds.aux_rm if hasattr(ds, "aux_rm") else np.zeros_like(ds.time),
-            np.tile(ds.freq, ds.time.size).reshape(ds.time.size, -1),
+            (ds.epoch - ds.start_time).to(u.s).value,
+            ds.lst.hourangle*3600,
+            ds.coords.ra.deg,
+            ds.coords.dec.deg,
+            ds.coords_galactic.l.deg,
+            ds.coords_galactic.b.deg,
+            ds.feed_angle,
+            ds.pos_angle,
+            ds.par_angle,
+            ds.coords_altaz.az.deg,
+            90 - ds.coords_altaz.alt.deg,
+            ds.aux_dm.to(u.pc/u.cm**3).value,
+            ds.aux_rm.to(u.rad/u.m**2).value,
+            np.tile(ds.freq, ds.epoch.size).reshape(ds.epoch.size, -1),
             ds.weights,
-            offsets.reshape(ds.time.size, -1),
-            scales.reshape(ds.time.size, -1),
+            offsets.reshape(ds.epoch.size, -1),
+            scales.reshape(ds.epoch.size, -1),
             data,
         ],
         dtype=(np.record, [
@@ -229,7 +209,7 @@ def construct_subint_hdu(ds):
         'scale': ds.flux_unit,
         'pol_type': ds.pol_type,
         'npol': ds.n_polns,
-        'tbin': ds.time_per_bin,
+        'tbin': ds.history.time_per_bin.to(u.s).value,
         'nbin': ds.phase.shape[0],
         'nbin_prd': int(1/(ds.phase.data[1]-ds.phase.data[0])),
         'phs_offs': ds.phase.data[0],
@@ -238,9 +218,9 @@ def construct_subint_hdu(ds):
         'signint': 0,
         'nsuboffs': '*',
         'nchan': ds.freq.shape[0],
-        'chan_bw': ds.channel_bandwidth,
-        'DM': ds.DM,
-        'RM': ds.RM,
+        'chan_bw': ds.channel_bandwidth.to(u.MHz).value,
+        'DM': ds.DM.to(u.pc/u.cm**3).value,
+        'RM': ds.RM.to(u.rad/u.m**2).value,
         'nchnoffs': if_missing('*', ds.channel_offset),
         'nsblk': 1,
         'nstot': '*',
