@@ -1,13 +1,80 @@
 import numpy as np
 from astropy.time import Time
+from astropy.coordinates import SkyCoord
+
 from psrfits.formatting import fmt_items, fmt_array
 from psrfits import baseline, dispersion, polarization, plots, averaging
 
 class Dataset:
     '''
-    A set of data that is uniform (same source, receiver, frequency range, etc.),
+    A set of data that is homogeneous (same source, receiver, frequency range, etc.),
     but may contain data from multiple PSRFITS files.
     '''
+    @classmethod
+    def collect(cls, datafiles):
+        '''
+        Collect data from several DataFile objects into a Dataset.
+        '''
+        datafiles.sort(key=lambda item: item.start_time)
+        first = datafiles[0]
+        ref_freq = first.freq
+
+        out = cls()
+        out.which_file = np.concatenate(
+            [np.full(df.epoch.shape, i) for i, df in enumerate(datafiles)]
+        )
+
+        # always use the first value for start_time and start_lst
+        out.start_time = first.start_time
+        out.start_lst = first.start_lst
+
+        # these should match for homogeneous data
+        assert all(df.center_freq == first.center_freq for df in datafiles)
+        out.center_freq = first.center_freq
+        assert all(df.bandwidth == first.bandwidth for df in datafiles)
+        out.bandwidth = first.bandwidth
+        assert all(df.channel_bandwidth == first.channel_bandwidth for df in datafiles)
+        out.channel_bandwidth = first.channel_bandwidth
+        assert all(df.n_polns == first.n_polns for df in datafiles)
+        out.n_polns = first.n_polns
+        assert all(df.pol_type == first.pol_type for df in datafiles)
+        out.pol_type = first.pol_type
+        assert all(df.epoch_type == first.epoch_type for df in datafiles)
+        out.epoch_type = first.epoch_type
+        assert all(df.time_var == first.time_var for df in datafiles)
+        out.time_var = first.time_var
+        assert all(df.time_unit == first.time_unit for df in datafiles)
+        out.time_unit = first.time_unit
+
+        # deal with channel_offset?
+
+        # TODO: Use aux_dm and aux_rm here?
+        assert all(df.DM == first.DM for df in datafiles)
+        out.DM = first.DM
+        assert all(df.RM == first.RM for df in datafiles)
+        out.RM = first.RM
+
+        # time series attributes can just be concatenated
+        out.epoch = Time(np.concatenate([df.epoch for df in datafiles]))
+        out.duration = np.concatenate([df.duration for df in datafiles])
+        out.index = np.concatenate([df.index for df in datafiles])
+        out.lst = np.concatenate([df.lst for df in datafiles])
+        out.coords = SkyCoord(np.concatenate([df.coords for df in datafiles]))
+        out.feed_angle = np.concatenate([df.feed_angle for df in datafiles])
+        out.pos_angle = np.concatenate([df.pos_angle for df in datafiles])
+        out.par_angle = np.concatenate([df.par_angle for df in datafiles])
+        out.coords_galactic = SkyCoord(np.concatenate([df.coords_galactic for df in datafiles]))
+        out.coords_altaz = SkyCoord(np.concatenate([df.coords for df in datafiles]))
+        out.aux_dm = np.concatenate([df.aux_dm for df in datafiles])
+        out.aux_rm = np.concatenate([df.aux_rm for df in datafiles])
+
+        out.weights = np.concatenate([df.weights for df in datafiles])
+        out.frequencies = np.concatenate([df.frequencies for df in datafiles])
+        for pol in first.get_pols():
+            setattr(out, pol, np.concatenate([getattr(df, pol) for df in datafiles]))
+
+        return out
+
     def copy(self):
         '''
         Make a copy of this Dataset. Array-like attributes, including Numpy arrays

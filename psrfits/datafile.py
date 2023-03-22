@@ -75,11 +75,13 @@ class DataFile(Dataset):
         start_time += primary_hdu.header['stt_offs']*u.s
 
         out = cls()
+
+        # coordinates
         out.epoch =  start_time + subint_hdu.data['offs_sub'].copy()*u.s
         out.freq = freq*u.MHz
         out.phase = phase
-        out.duration = subint_hdu.data['tsubint'].copy()*u.s
-        out.index = subint_hdu.data['indexval']
+
+        # AttrCollections
         out.source = Source.from_hdulist(hdulist)
         out.observation = Observation.from_header(primary_hdu.header)
         out.telescope = Telescope.from_header(primary_hdu.header)
@@ -88,6 +90,9 @@ class DataFile(Dataset):
         out.beam = Beam.from_header(primary_hdu.header)
         out.calibrator = Calibrator.from_header(primary_hdu.header)
         out.history = History.from_hdu(history_hdu)
+
+        # scalar attributes
+        out.start_time = start_time
         out.center_freq = primary_hdu.header['obsfreq']*u.MHz
         out.bandwidth = primary_hdu.header['obsbw']*u.MHz
         out.channel_offset = maybe_missing(subint_hdu.header['nchnoffs']) # *
@@ -96,13 +101,15 @@ class DataFile(Dataset):
         out.RM = subint_hdu.header['RM']*u.rad/u.m**2
         out.n_polns = subint_hdu.header['npol']
         out.pol_type = subint_hdu.header['pol_type']
-        out.start_time = start_time
         out.start_lst = Longitude(primary_hdu.header['stt_lst']/3600, u.hourangle)
         out.epoch_type = subint_hdu.header['epochs']
         out.time_var = subint_hdu.header['int_type']
         out.time_unit = subint_hdu.header['int_unit']
         out.flux_unit = subint_hdu.header['scale']
 
+        # time serries attributes
+        out.duration = subint_hdu.data['tsubint'].copy()*u.s
+        out.index = subint_hdu.data['indexval']
         out.lst = Longitude(subint_hdu.data['lst_sub'].copy()/3600, u.hourangle)
         out.coords = SkyCoord(
             subint_hdu.data['ra_sub'].copy(),
