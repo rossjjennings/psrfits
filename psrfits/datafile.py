@@ -15,10 +15,6 @@ class DataFile(Dataset):
     '''
     An object representing a PSRFITS file.
     '''
-    def __init__(self, **attrs):
-        for attr, val in attrs.items():
-            setattr(self, attr, val)
-
     @classmethod
     def from_file(cls, filename, loader='lazy', uniformize_freqs=False):
         '''
@@ -78,60 +74,57 @@ class DataFile(Dataset):
         start_time += primary_hdu.header['stt_smjd']*u.s
         start_time += primary_hdu.header['stt_offs']*u.s
 
-        attrs = {
-            'epoch': start_time + subint_hdu.data['offs_sub'].copy()*u.s,
-            'freq': freq*u.MHz,
-            'phase': phase,
-            'duration': subint_hdu.data['tsubint'].copy()*u.s,
-            'index': subint_hdu.data['indexval'],
-            'source': Source.from_hdulist(hdulist),
-            'observation': Observation.from_header(primary_hdu.header),
-            'telescope': Telescope.from_header(primary_hdu.header),
-            'frontend': Frontend.from_header(primary_hdu.header),
-            'backend': Backend.from_header(primary_hdu.header),
-            'beam': Beam.from_header(primary_hdu.header),
-            'calibrator': Calibrator.from_header(primary_hdu.header),
-            'history': History.from_hdu(history_hdu),
-            'center_freq': primary_hdu.header['obsfreq']*u.MHz,
-            'bandwidth': primary_hdu.header['obsbw']*u.MHz,
-            'channel_offset': maybe_missing(subint_hdu.header['nchnoffs']), # *
-            'channel_bandwidth': subint_hdu.header['chan_bw']*u.MHz,
-            'DM': subint_hdu.header['DM']*u.pc/u.cm**3,
-            'RM': subint_hdu.header['RM']*u.rad/u.m**2,
-            'n_polns': subint_hdu.header['npol'],
-            'pol_type': subint_hdu.header['pol_type'],
-            'start_time': start_time,
-            'start_lst': Longitude(primary_hdu.header['stt_lst']/3600, u.hourangle),
-            'epoch_type': subint_hdu.header['epochs'],
-            'time_var': subint_hdu.header['int_type'],
-            'time_unit': subint_hdu.header['int_unit'],
-            'flux_unit': subint_hdu.header['scale'],
-        }
+        out = cls()
+        out.epoch =  start_time + subint_hdu.data['offs_sub'].copy()*u.s
+        out.freq = freq*u.MHz
+        out.phase = phase
+        out.duration = subint_hdu.data['tsubint'].copy()*u.s
+        out.index = subint_hdu.data['indexval']
+        out.source = Source.from_hdulist(hdulist)
+        out.observation = Observation.from_header(primary_hdu.header)
+        out.telescope = Telescope.from_header(primary_hdu.header)
+        out.frontend = Frontend.from_header(primary_hdu.header)
+        out.backend = Backend.from_header(primary_hdu.header)
+        out.beam = Beam.from_header(primary_hdu.header)
+        out.calibrator = Calibrator.from_header(primary_hdu.header)
+        out.history = History.from_hdu(history_hdu)
+        out.center_freq = primary_hdu.header['obsfreq']*u.MHz
+        out.bandwidth = primary_hdu.header['obsbw']*u.MHz
+        out.channel_offset = maybe_missing(subint_hdu.header['nchnoffs']) # *
+        out.channel_bandwidth = subint_hdu.header['chan_bw']*u.MHz
+        out.DM = subint_hdu.header['DM']*u.pc/u.cm**3
+        out.RM = subint_hdu.header['RM']*u.rad/u.m**2
+        out.n_polns = subint_hdu.header['npol']
+        out.pol_type = subint_hdu.header['pol_type']
+        out.start_time = start_time
+        out.start_lst = Longitude(primary_hdu.header['stt_lst']/3600, u.hourangle)
+        out.epoch_type = subint_hdu.header['epochs']
+        out.time_var = subint_hdu.header['int_type']
+        out.time_unit = subint_hdu.header['int_unit']
+        out.flux_unit = subint_hdu.header['scale']
 
-        attrs.update({
-            'lst': Longitude(subint_hdu.data['lst_sub'].copy()/3600, u.hourangle),
-            'coords': SkyCoord(
-                subint_hdu.data['ra_sub'].copy(),
-                subint_hdu.data['dec_sub'].copy(),
-                frame='icrs', unit='deg',
-            ),
-            'coords_galactic': SkyCoord(
-                subint_hdu.data['glon_sub'].copy(),
-                subint_hdu.data['glat_sub'].copy(),
-                frame='galactic', unit='deg',
-            ),
-            'feed_angle': subint_hdu.data['fd_ang'].copy(),
-            'pos_angle': subint_hdu.data['pos_ang'].copy(),
-            'par_angle': subint_hdu.data['par_ang'].copy(),
-            'coords_altaz': SkyCoord(
-                subint_hdu.data['tel_az'].copy(),
-                90 - subint_hdu.data['tel_zen'].copy(),
-                frame='altaz', unit='deg',
-                obstime=attrs['epoch'], location=attrs['telescope'].location,
-            ),
-            'aux_dm': subint_hdu.data['aux_dm'].copy()*u.pc/u.cm**3,
-            'aux_rm': subint_hdu.data['aux_rm'].copy()*u.rad/u.m**2,
-        })
+        out.lst = Longitude(subint_hdu.data['lst_sub'].copy()/3600, u.hourangle)
+        out.coords = SkyCoord(
+            subint_hdu.data['ra_sub'].copy(),
+            subint_hdu.data['dec_sub'].copy(),
+            frame='icrs', unit='deg',
+        )
+        out.coords_galactic = SkyCoord(
+            subint_hdu.data['glon_sub'].copy(),
+            subint_hdu.data['glat_sub'].copy(),
+            frame='galactic', unit='deg',
+        )
+        out.feed_angle = subint_hdu.data['fd_ang'].copy()
+        out.pos_angle = subint_hdu.data['pos_ang'].copy()
+        out.par_angle = subint_hdu.data['par_ang'].copy()
+        out.coords_altaz = SkyCoord(
+            subint_hdu.data['tel_az'].copy(),
+            90 - subint_hdu.data['tel_zen'].copy(),
+            frame='altaz', unit='deg',
+            obstime=out.epoch, location=out.telescope.location,
+        )
+        out.aux_dm = subint_hdu.data['aux_dm'].copy()*u.pc/u.cm**3
+        out.aux_rm = subint_hdu.data['aux_rm'].copy()*u.rad/u.m**2
         hdulist.close()
 
         if loader == 'lazy':
@@ -142,39 +135,37 @@ class DataFile(Dataset):
             load = load_copy
 
         data = load(filename, 'subint', 'data')
-        weights = load(filename, 'subint', 'dat_wts')
-        weights = weights.reshape(data.shape[0], data.shape[2])
         scale = load(filename, 'subint', 'dat_scl')
-        npol = attrs['n_polns']
         scale = scale.reshape(data.shape[:3])
         offset = load(filename, 'subint', 'dat_offs')
         offset = offset.reshape(data.shape[:3])
-        attrs['frequencies'] = load(filename, 'subint', 'dat_freq')
+
+        weights = load(filename, 'subint', 'dat_wts')
+        weights = weights.reshape(data.shape[0], data.shape[2])
+        out.weights = weights
+        out.frequencies = load(filename, 'subint', 'dat_freq')
 
         data = scale[..., np.newaxis]*data + offset[..., np.newaxis]
 
-        pol_type = attrs['pol_type']
-        if pol_type in ['AA+BB', 'INTEN']:
-            attrs['I'] = data[:,0]
-        elif pol_type == 'AABB':
-            attrs['AA'] = data[:,0]
-            attrs['BB'] = data[:,1]
-        elif pol_type == 'AABBCRCI':
-            attrs['AA'] = data[:,0]
-            attrs['BB'] = data[:,1]
-            attrs['CR'] = data[:,2]
-            attrs['CI'] = data[:,3]
-        elif pol_type == 'IQUV':
-            attrs['I'] = data[:,0]
-            attrs['Q'] = data[:,1]
-            attrs['U'] = data[:,2]
-            attrs['V'] = data[:,3]
+        if out.pol_type in ['AA+BB', 'INTEN']:
+            out.I = data[:,0]
+        elif out.pol_type == 'AABB':
+            out.AA = data[:,0]
+            out.BB = data[:,1]
+        elif out.pol_type == 'AABBCRCI':
+            out.AA = data[:,0]
+            out.BB = data[:,1]
+            out.CR = data[:,2]
+            out.CI = data[:,3]
+        elif out.pol_type == 'IQUV':
+            out.I = data[:,0]
+            out.Q = data[:,1]
+            out.U = data[:,2]
+            out.V = data[:,3]
         else:
             raise ValueError("Polarization type '{}' not recognized.".format(pol_type))
 
-        obs = cls(**{'data': data, 'weights': weights, **attrs})
-
-        return obs
+        return out
 
 def load_copy(filename, hdu, column):
     '''

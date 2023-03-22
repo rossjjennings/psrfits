@@ -4,10 +4,10 @@ from psrfits.formatting import fmt_items, fmt_array
 from psrfits import baseline, dispersion, polarization, plots, averaging
 
 class Dataset:
-    def __init__(self, **attrs):
-        for attr, val in attrs.items():
-            setattr(self, attr, val)
-
+    '''
+    A set of data that is uniform (same source, receiver, frequency range, etc.),
+    but may contain data from multiple PSRFITS files.
+    '''
     def copy(self):
         '''
         Make a copy of this Dataset. Array-like attributes, including Numpy arrays
