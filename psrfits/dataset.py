@@ -98,7 +98,7 @@ class Dataset:
     def __repr__(self):
         return (
             f"<psrfits.{self.__class__.__name__}: "
-            f"{self.observation.mode} {self.source.name}, "
+            f"{self.observation.mode} {self.source}, "
             f"{self.frontend.name} {self.backend.name} ({self.telescope.name}), "
             f"{self.start_time.iso}"
             ">"
@@ -110,7 +110,7 @@ class Dataset:
         '''
         nsub, npol, nchan, nbin = self.data.shape
         info_items = {
-            'Source': self.source.name,
+            'Source': self.source,
             'Mode': self.observation.mode,
             'Telescope': self.telescope.name,
             'Frontend': self.frontend.name,

@@ -10,6 +10,8 @@ import toml
 import os.path
 
 from .attrs.attrcollection import if_missing
+from .attrs.polyco import PolycoHistory
+from .attrs.t2predict import ChebyModelSet
 from .polarization import get_pols
 
 def save(filename, ds, overwrite=False):
@@ -24,10 +26,11 @@ def to_hdulist(ds):
     hdus.append(construct_primary_hdu(ds))
     hdus.append(construct_history_hdu(ds))
     hdus.append(construct_psrparam_hdu(ds))
-    if ds.source.predictor is not None:
-        hdus.append(construct_t2predict_hdu(ds))
-    if ds.source.polyco_history is not None:
-        hdus.append(construct_polyco_hdu(ds))
+    if ds.predictor is not None:
+        if isinstance(ds.predictor, ChebyModelSet):
+            hdus.append(construct_t2predict_hdu(ds))
+        elif isinstance(ds.predictor, PolycoHistory):
+            hdus.append(construct_polyco_hdu(ds))
     hdus.append(construct_subint_hdu(ds))
     return fits.HDUList(hdus)
 
@@ -55,14 +58,13 @@ def construct_primary_hdu(ds):
         'obsbw': ds.bandwidth.to(u.MHz).value,
         'obsnchan': ds.history[0].n_channels,
         'chan_dm': ds.DM.to(u.pc/u.cm**3).value,
-        'src_name': ds.source.name,
+        'src_name': ds.source,
         'stt_imjd': imjd,
         'stt_smjd': int(smjd),
         'stt_offs': smjd % 1,
         'stt_lst': 3600*ds.start_lst.to(u.hourangle).value,
     }
     
-    header_cards.update(ds.source.header_cards())
     header_cards.update(ds.observation.header_cards())
     header_cards.update(ds.telescope.header_cards())
     header_cards.update(ds.frontend.header_cards())
@@ -81,7 +83,7 @@ def construct_psrparam_hdu(ds):
     Construct PSRPARAM HDU
     '''
     param_data = np.array(
-        [line for line in ds.source.model.split('\n')],
+        [line for line in ds.model.split('\n')],
         dtype=(np.record, [('PARAM', 'S128')])
     )
     psrparam_hdu = fits.BinTableHDU(data=param_data)
@@ -95,7 +97,7 @@ def construct_t2predict_hdu(ds):
     '''
     Construct Tempo2 predictor HDU
     '''
-    description = ds.source.predictor.describe()
+    description = ds.predictor.describe()
     predictor_data = np.array(
         [line for line in description.split('\n')],
         dtype=(np.record, [('PREDICT', 'S128')])
@@ -111,7 +113,7 @@ def construct_polyco_hdu(ds):
     '''
     Construct Polyco HDU
     '''
-    polyco_data = ds.source.polyco_history.as_table()
+    polyco_data = ds.polyco_history.as_table()
     polyco_hdu = fits.BinTableHDU(data=polyco_data)
     polyco_hdu.header['tunit7'] = 'MHz'
     polyco_hdu.header['tunit11'] = 'Hz'

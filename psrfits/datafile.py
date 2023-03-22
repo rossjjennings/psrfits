@@ -8,6 +8,8 @@ from dask import delayed
 from pint import PulsarMJD
 from psrfits.attrs import *
 from psrfits.attrs.attrcollection import maybe_missing
+from psrfits.attrs.polyco import PolycoHistory
+from psrfits.attrs.t2predict import ChebyModelSet
 from psrfits.dataset import Dataset
 from textwrap import indent
 
@@ -81,8 +83,14 @@ class DataFile(Dataset):
         out.freq = freq*u.MHz
         out.phase = phase
 
-        # AttrCollections
-        out.source = Source.from_hdulist(hdulist)
+        # special values
+        if 'polyco' in hdulist:
+            out.predictor = PolycoHistory(hdulist['polyco'].data)
+        if 't2predict' in hdulist:
+            out.predictor = ChebyModelSet.parse(
+                [line[0] for line in hdulist['t2predict'].data]
+            )
+        out.model = '\n'.join(line[0] for line in hdulist['psrparam'].data)
         out.observation = Observation.from_header(primary_hdu.header)
         out.telescope = Telescope.from_header(primary_hdu.header)
         out.frontend = Frontend.from_header(primary_hdu.header)
@@ -92,6 +100,7 @@ class DataFile(Dataset):
         out.history = History.from_hdu(history_hdu)
 
         # scalar attributes
+        out.source = primary_hdu.header['src_name']
         out.start_time = start_time
         out.center_freq = primary_hdu.header['obsfreq']*u.MHz
         out.bandwidth = primary_hdu.header['obsbw']*u.MHz

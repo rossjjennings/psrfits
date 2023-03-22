@@ -1,4 +1,3 @@
-from .source import Source
 from .frontend import Frontend
 from .backend import Backend
 from .telescope import Telescope

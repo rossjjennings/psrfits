@@ -66,9 +66,9 @@ def channel_phase(ds, out_of_bounds='error'):
     '''
     Compute the phase offset in each channel from the internal Tempo2 predictor.
     '''
-    if ds.source.predictor is None:
+    if ds.predictor is None:
         raise ValueError("No Tempo2 predictor present!")
-    phase_offs = ds.source.predictor(ds.epoch[:, np.newaxis], ds.freq, out_of_bounds) % 1
+    phase_offs = ds.predictor(ds.epoch[:, np.newaxis], ds.freq, out_of_bounds) % 1
     return phase_offs
 
 def align_with_predictor(ds, inplace=False, out_of_bounds='error'):

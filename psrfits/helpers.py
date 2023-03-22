@@ -5,7 +5,7 @@ import tempfile
 
 def get_pint_model(ds):
     with tempfile.NamedTemporaryFile('w+') as tp:
-        tp.write(ds.source.model)
+        tp.write(ds.model)
         tp.flush()
         model = get_model(tp.name)
     return model
