@@ -28,6 +28,12 @@ class Dataset:
         out.start_time = first.start_time
         out.start_lst = first.start_lst
 
+        # other coordinates
+        assert all(np.all(df.freq == first.freq) for df in datafiles)
+        out.freq = first.freq
+        assert all(np.all(df.phase == first.phase) for df in datafiles)
+        out.phase = first.phase
+
         # these should match for homogeneous data
         assert all(df.center_freq == first.center_freq for df in datafiles)
         out.center_freq = first.center_freq
