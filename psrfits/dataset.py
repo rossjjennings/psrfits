@@ -108,7 +108,9 @@ class Dataset:
         '''
         Print a summary of the data contained in this Dataset.
         '''
-        nsub, npol, nchan, nbin = self.data.shape
+        pols = self.get_pols()
+        npol = len(pols)
+        nsub, nchan, nbin = getattr(self, pols[0]).shape
         info_items = {
             'Source': self.source,
             'Mode': self.observation.mode,
@@ -117,7 +119,7 @@ class Dataset:
             'Backend': self.backend.name,
             'Project ID': self.observation.project_id,
             'Start Time': self.start_time,
-            'Duration': f"{np.sum(self.duration):g} s",
+            'Duration': f"{np.sum(self.duration):g}",
             'Subintegrations': nsub,
             'Center Frequency': self.center_freq,
             'Bandwidth': self.bandwidth,
