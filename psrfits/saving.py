@@ -24,9 +24,9 @@ def to_hdulist(ds):
     hdus.append(construct_primary_hdu(ds))
     hdus.append(construct_history_hdu(ds))
     hdus.append(construct_psrparam_hdu(ds))
-    if ds.predictor is not None:
+    if hasattr(ds, 'predictor'):
         hdus.append(construct_t2predict_hdu(ds))
-    if ds.polyco is not None:
+    if hasattr(ds, 'polyco'):
         hdus.append(construct_polyco_hdu(ds))
     hdus.append(construct_subint_hdu(ds))
     return fits.HDUList(hdus)
