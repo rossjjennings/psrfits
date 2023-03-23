@@ -38,7 +38,7 @@ def load(filename, weight=False, uniformize_freqs=False, prepare=False,
         if use_predictor:
             try:
                 ds.align_with_predictor()
-            except ValueError:
+            except AttributeError:
                 ds.dedisperse()
         else:
             ds.dedisperse()
