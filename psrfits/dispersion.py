@@ -27,10 +27,12 @@ def weighted_center_freq(ds):
     '''
     return (np.sum(ds.freq*ds.weights)/np.sum(ds.weights)).item()
 
-def dispersion_dt(ds, DM=None, weight_center_freq=False):
+def dispersion_dt(ds, DM=None, ref_freq=None):
     '''
-    Compute the time delay in each channel associated with a given DM.
-    If `DM` is `None`, use the DM attribute of `ds`.
+    Compute the time delay in each channel associated with a given DM
+    and reference frequency. If `DM` is `None`, use the DM attribute of `ds`.
+    If `ref_freq` is `None`, use the center frequency from the latest entry
+    in `ds.history`.
     '''
     if DM is None:
         DM = ds.DM
@@ -38,19 +40,21 @@ def dispersion_dt(ds, DM=None, weight_center_freq=False):
     # TEMPO/Tempo2/PRESTO conventional value (cf. Kulkarni 2020, arXiv:2007.02886)
     K = 1/2.41e-4 * u.s * u.MHz**2 * u.cm**3 / u.pc
 
-    if weight_center_freq:
-        center_freq = weighted_center_freq(ds)
-    else:
-        center_freq = ds.history.center_freq
+    if ref_freq is None:
+        ref_freq = ds.history.center_freq
+    elif ref_freq == 'weighted':
+        ref_freq = weighted_center_freq(ds)
 
-    return (K*DM*(ds.freq**-2 - center_freq**-2)).to(u.s)
+    return (K*DM*(ds.freq**-2 - ref_freq**-2)).to(u.s)
 
-def dedisperse(ds, inplace=False, DM=None, weight_center_freq=False):
+def dedisperse(ds, inplace=False, DM=None, ref_freq=None):
     '''
-    Dedisperse the data with the given DM.
+    Dedisperse the data with the given DM and reference frequency.
     If `DM` is `None`, use the DM attribute of `ds`.
+    If `ref_freq` is `None`, use the center frequency from the latest entry
+    in `ds.history`.
     '''
-    time_delays = dispersion_dt(ds, DM, weight_center_freq)
+    time_delays = dispersion_dt(ds, DM, ref_freq)
     
     tbin = ds.history.time_per_bin
     bin_delays = time_delays/tbin

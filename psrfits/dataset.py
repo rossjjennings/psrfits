@@ -135,12 +135,14 @@ class Dataset:
         '''
         print(fmt_items(self.__dict__))
 
-    def dedisperse(self, DM=None, weight_center_freq=False):
+    def dedisperse(self, DM=None, ref_freq=None):
         '''
-        Dedisperse the data with the given DM.
+        Dedisperse the data with the given DM and reference frequency.
         If `DM` is `None`, use the DM attribute of `ds`.
+        If `ref_freq` is `None`, use the center frequency from the latest entry
+        in `ds.history`.
         '''
-        return dispersion.dedisperse(self, inplace=True, DM=DM, weight_center_freq=weight_center_freq)
+        return dispersion.dedisperse(self, inplace=True, DM=DM, ref_freq=ref_freq)
 
     def align_with_predictor(self, out_of_bounds='error'):
         '''
