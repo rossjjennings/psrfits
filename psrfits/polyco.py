@@ -4,7 +4,7 @@ from textwrap import indent
 from datetime import datetime
 from astropy.time import Time
 
-from .attrcollection import AttrCollection, maybe_missing, if_missing
+from .attrs.attrcollection import AttrCollection, maybe_missing, if_missing
 
 class PolycoHistory:
     def __init__(self, records):

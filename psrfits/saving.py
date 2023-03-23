@@ -10,8 +10,8 @@ import toml
 import os.path
 
 from .attrs.attrcollection import if_missing
-from .attrs.polyco import PolycoHistory
-from .attrs.t2predict import ChebyModelSet
+from .polyco import PolycoHistory
+from .t2predict import ChebyModelSet
 from .polarization import get_pols
 
 def save(filename, ds, overwrite=False):

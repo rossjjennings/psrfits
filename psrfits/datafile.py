@@ -8,8 +8,8 @@ from dask import delayed
 from pint import PulsarMJD
 from psrfits.attrs import *
 from psrfits.attrs.attrcollection import maybe_missing
-from psrfits.attrs.polyco import PolycoHistory
-from psrfits.attrs.t2predict import ChebyModelSet
+from psrfits.polyco import PolycoHistory
+from psrfits.t2predict import ChebyModelSet
 from psrfits.dataset import Dataset
 from textwrap import indent
 
