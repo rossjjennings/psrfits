@@ -72,6 +72,8 @@ def dedisperse(ds, inplace=False, DM=None, ref_freq=None):
         setattr(new_ds, pol, dedispersed_arr)
 
     dedisp_method='Polyco' if ref_freq is None else f'Incoherent(ref_freq={ref_freq})'
+    if DM is None:
+        DM = ds.DM
     new_ds.DM = DM
     new_ds.history.add_entry(dedispersed=True, DM=DM, dedisp_method='Polyco')
 
