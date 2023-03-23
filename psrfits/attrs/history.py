@@ -3,6 +3,7 @@ from textwrap import indent, dedent
 from datetime import datetime
 from astropy.time import Time
 import astropy.units as u
+import copy
 
 from .attrcollection import AttrCollection, maybe_missing, if_missing
 
@@ -34,7 +35,14 @@ class History:
     def __iter__(self):
         for entry in self.entries:
             yield entry
-    
+
+    def add_entry(self, **kwargs):
+        new_entry = copy.copy(self.entries[-1])
+        new_entry.date = Time.now()
+        for key in kwargs:
+            setattr(new_entry, key, kwargs[key])
+        self.entries.append(new_entry)
+
     def as_table(self):
         return np.array(
             [(

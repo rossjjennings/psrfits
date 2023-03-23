@@ -53,7 +53,7 @@ def dedisperse(ds, inplace=False, DM=None, ref_freq=None):
     If `ref_freq` is `None`, use the polyco reference frequency.
     '''
     time_delays = dispersion_dt(ds, DM, ref_freq)
-    
+
     tbin = ds.history.time_per_bin
     bin_delays = time_delays/tbin
 
@@ -61,7 +61,9 @@ def dedisperse(ds, inplace=False, DM=None, ref_freq=None):
     for pol in get_pols(ds):
         dedispersed_arr = fft_roll(getattr(ds, pol), -bin_delays)
         setattr(new_ds, pol, dedispersed_arr)
-    
+
+    new_ds.history.add_entry(dedispersed=True)
+
     return new_ds
 
 def channel_phase(ds, out_of_bounds='error'):
@@ -89,5 +91,7 @@ def align_with_predictor(ds, inplace=False, out_of_bounds='error'):
         nbin = pol_arr.shape[-1]
         dedispersed_arr = fft_roll(pol_arr, nbin*phase_offs)
         setattr(new_ds, pol, dedispersed_arr)
+
+    new_ds.history.add_entry(dedispersed=True)
 
     return new_ds

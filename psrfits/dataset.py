@@ -1,9 +1,11 @@
 import numpy as np
 from astropy.time import Time
 from astropy.coordinates import SkyCoord
+import copy
 
 from psrfits.formatting import fmt_items, fmt_array
 from psrfits import baseline, dispersion, polarization, plots, averaging
+from psrfits.attrs.history import History
 
 class Dataset:
     '''
@@ -98,6 +100,8 @@ class Dataset:
         for attr, value in self.__dict__.items():
             if isinstance(value, np.ndarray) or isinstance(value, Time):
                 setattr(out, attr, value.copy())
+            elif isinstance(value, History):
+                setattr(out, attr, copy.deepcopy(value))
             else:
                 setattr(out, attr, value)
         return out
