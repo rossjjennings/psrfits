@@ -44,6 +44,9 @@ class PolycoHistory:
     def f0(self, time, extend_prec=True, check_bounds=True):
         return self.entries[-1].f0(time, extend_prec, check_bounds)
 
+    def dt(self, time, extend_prec=True, check_bounds=True):
+        return self.entries[-1].dt(time, extend_prec, check_bounds)
+
     def as_table(self):
         return np.array(
             [(
@@ -126,17 +129,17 @@ class PolycoModel(AttrCollection):
         return description
 
     def __call__(self, time, extend_prec=True, check_bounds=True):
-        dt = self.dt(time, extend_prec, check_bounds)
-        ref_f0 = self.ref_f0.to(u.Hz).value
-        phase = self.ref_phase + dt*60*ref_f0 + polynomial.polyval(dt, self.coeffs)
+        dt_min = self.dt(time, extend_prec, check_bounds).to(u.min).value
+        ref_f0_Hz = self.ref_f0.to(u.Hz).value
+        phase = self.ref_phase + dt_min*60*ref_f0_Hz + polynomial.polyval(dt_min, self.coeffs)
         return phase
 
     def f0(self, time, extend_prec=True, check_bounds=True):
-        dt = self.dt(time, extend_prec, check_bounds)
-        ref_f0 = self.ref_f0.to(u.Hz).value
+        dt_min = self.dt(time, extend_prec, check_bounds).to(u.min).value
+        ref_f0_Hz = self.ref_f0.to(u.Hz).value
 
         der_coeffs = polynomial.polyder(self.coeffs)
-        f0 = ref_f0 + polynomial.polyval(dt, der_coeffs)/60
+        f0 = ref_f0_Hz + polynomial.polyval(dt_min, der_coeffs)/60
         return f0*u.Hz
     
     def dt(self, time, extend_prec=True, check_bounds=True):
@@ -148,7 +151,7 @@ class PolycoModel(AttrCollection):
             raise ValueError(f'MJD {mjd[(mjd < mjd_start) | (mjd > mjd_end)]} out of bounds.')
 
         dt = (mjd - ref_mjd)*1440 # convert days to minutes
-        return dt
+        return dt*u.min
 
     def date_as_string(self):
         if self.date_produced is None:
