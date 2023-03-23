@@ -2,6 +2,7 @@ import numpy as np
 from numpy.polynomial import polynomial
 from textwrap import indent
 from datetime import datetime
+import astropy.units as u
 from astropy.time import Time
 
 from .attrs.attrcollection import AttrCollection, maybe_missing, if_missing
@@ -36,7 +37,13 @@ class PolycoHistory:
     def __iter__(self):
         for entry in self.entries:
             yield entry
-    
+
+    def __call__(self, time, extend_prec=True, check_bounds=True):
+        return self.entries[-1](time, extend_prec, check_bounds)
+
+    def f0(self, time, extend_prec=True, check_bounds=True):
+        return self.entries[-1].f0(time, extend_prec, check_bounds)
+
     def as_table(self):
         return np.array(
             [(
@@ -46,11 +53,11 @@ class PolycoHistory:
                 entry.n_coeffs,
                 entry.n_blocks,
                 entry.site,
-                entry.ref_freq,
+                entry.ref_freq.to(u.MHz).value,
                 entry.start_phase,
-                entry.ref_mjd,
+                entry.ref_epoch.mjd,
                 entry.ref_phase,
-                entry.ref_f0,
+                entry.ref_f0.to(u.Hz).value,
                 entry.log10_fit_err,
                 entry.coeffs,
             ) for entry in self],
@@ -81,7 +88,7 @@ class PolycoModel(AttrCollection):
         'site',
         'ref_freq',
         'start_phase',
-        'ref_mjd',
+        'ref_epoch',
         'ref_phase',
         'ref_f0',
         'log10_fit_err',
@@ -100,11 +107,11 @@ class PolycoModel(AttrCollection):
             n_coeffs = rec['NCOEF'],
             n_blocks = rec['NPBLK'],
             site = rec['NSITE'],
-            ref_freq = rec['REF_FREQ'],
+            ref_freq = rec['REF_FREQ']*u.MHz,
             start_phase = rec['PRED_PHS'],
-            ref_mjd = rec['REF_MJD'],
+            ref_epoch = Time(rec['REF_MJD'], format='pulsar_mjd'),
             ref_phase = rec['REF_PHS'],
-            ref_f0 = rec['REF_F0'],
+            ref_f0 = rec['REF_F0']*u.Hz,
             log10_fit_err = rec['LGFITERR'],
             coeffs = rec['COEFF'],
         )
@@ -117,25 +124,29 @@ class PolycoModel(AttrCollection):
         description += indent(self._repr_items(), '    ')
         return description
 
-    def __call__(self, mjd, check_bounds=True):
-        dt = self.dt(mjd, check_bounds)
-        phase = self.ref_phase + dt*60*self.ref_f0 + polynomial.polyval(dt, self.coeffs)
+    def __call__(self, time, extend_prec=True, check_bounds=True):
+        dt = self.dt(time, check_bounds)
+        ref_f0 = self.ref_f0.to(u.Hz).value
+        phase = self.ref_phase + dt*60*ref_f0 + polynomial.polyval(dt, self.coeffs)
         return phase
 
-    def f0(self, mjd, check_bounds=True):
-        dt = self.dt(mjd, check_bounds)
+    def f0(self, time, extend_prec=True, check_bounds=True):
+        dt = self.dt(time, check_bounds)
+        ref_f0 = self.ref_f0.to(u.Hz).value
 
         der_coeffs = polynomial.polyder(self.coeffs)
-        f0 = self.ref_f0 + polynomial.polyval(dt, der_coeffs)/60
+        f0 = ref_f0 + polynomial.polyval(dt, der_coeffs)/60
         return f0
     
-    def dt(self, mjd, check_bounds=True):
-        mjd_start = self.ref_mjd - self.span/1440
-        mjd_end = self.ref_mjd + self.span/1440
+    def dt(self, time, extend_prec=True, check_bounds=True):
+        mjd = time.mjd_long if extend_prec else time.mjd
+        ref_mjd = self.ref_epoch.mjd
+        mjd_start = ref_mjd - self.span/1440
+        mjd_end = ref_mjd + self.span/1440
         if check_bounds and np.any((mjd < mjd_start) | (mjd > mjd_end)):
             raise ValueError(f'MJD {mjd[(mjd < mjd_start) | (mjd > mjd_end)]} out of bounds.')
 
-        dt = (mjd - self.ref_mjd)*1440 # minutes
+        dt = (mjd - ref_mjd)*1440 # minutes
         return dt
 
     def date_as_string(self):
