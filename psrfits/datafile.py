@@ -121,27 +121,28 @@ class DataFile(Dataset):
         # time serries attributes
         out.duration = subint_hdu.data['tsubint'].copy()*u.s
         out.index = subint_hdu.data['indexval']
-        if 'lst_sub' in subint_hdu.data:
+        field_names = subint_hdu.data.dtype.names
+        if 'LST_SUB' in field_names:
             out.lst = Longitude(subint_hdu.data['lst_sub'].copy()/3600, u.hourangle)
-        if 'ra_sub' in subint_hdu.data and 'dec_sub' in subint_hdu.data:
+        if 'RA_SUB' in field_names and 'DEC_SUB' in field_names:
             out.coords = SkyCoord(
                 subint_hdu.data['ra_sub'].copy(),
                 subint_hdu.data['dec_sub'].copy(),
                 frame='icrs', unit='deg',
             )
-        if 'glon_sub' in subint_hdu.data and 'glat_sub' in subint_hdu.data:
+        if 'GLON_SUB' in field_names and 'GLAT_SUB' in field_names:
             out.coords_galactic = SkyCoord(
                 subint_hdu.data['glon_sub'].copy(),
                 subint_hdu.data['glat_sub'].copy(),
                 frame='galactic', unit='deg',
             )
-        if 'fd_ang' in subint_hdu.data:
+        if 'FD_ANG' in field_names:
             out.feed_angle = subint_hdu.data['fd_ang'].copy()
-        if 'pos_ang' in subint_hdu.data:
+        if 'POS_ANG' in field_names:
             out.pos_angle = subint_hdu.data['pos_ang'].copy()
-        if 'par_ang' in subint_hdu.data:
+        if 'PAR_ANG' in field_names:
             out.par_angle = subint_hdu.data['par_ang'].copy()
-        if 'tel_az' in subint_hdu.data and 'tel_zen' in subint_hdu.data:
+        if 'TEL_AZ' in field_names and 'TEL_ZEN' in field_names:
             out.coords_altaz = SkyCoord(
                 subint_hdu.data['tel_az'].copy(),
                 90 - subint_hdu.data['tel_zen'].copy(),
