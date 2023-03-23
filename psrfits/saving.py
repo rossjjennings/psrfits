@@ -23,7 +23,8 @@ def to_hdulist(ds):
     hdus = []
     hdus.append(construct_primary_hdu(ds))
     hdus.append(construct_history_hdu(ds))
-    hdus.append(construct_psrparam_hdu(ds))
+    if hasattr(ds, 'model'):
+        hdus.append(construct_psrparam_hdu(ds))
     if hasattr(ds, 'predictor'):
         hdus.append(construct_t2predict_hdu(ds))
     if hasattr(ds, 'polyco'):

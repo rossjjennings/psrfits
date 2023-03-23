@@ -12,6 +12,7 @@ from psrfits.polyco import PolycoHistory
 from psrfits.t2predict import ChebyModelSet
 from psrfits.dataset import Dataset
 from textwrap import indent
+import warnings
 
 class DataFile(Dataset):
     '''
@@ -90,7 +91,8 @@ class DataFile(Dataset):
             out.predictor = ChebyModelSet.parse(
                 [line[0] for line in hdulist['t2predict'].data]
             )
-        out.model = '\n'.join(line[0] for line in hdulist['psrparam'].data)
+        if 'psrparam' in hdulist:
+            out.model = '\n'.join(line[0] for line in hdulist['psrparam'].data)
         out.observation = Observation.from_header(primary_hdu.header)
         out.telescope = Telescope.from_header(primary_hdu.header)
         out.frontend = Frontend.from_header(primary_hdu.header)
