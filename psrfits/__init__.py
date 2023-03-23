@@ -15,3 +15,9 @@ from psrfits.attrs import *
 from psrfits.helpers import get_pint_model, wavelet_smooth
 from psrfits.plots import plot_portrait, plot_profile, plot_pulsetrain
 from psrfits.averaging import avg_portrait, avg_profile, avg_pulsetrain
+from importlib.metadata import version, PackageNotFoundError
+
+try:
+    __version__ = version("psrfits")
+except PackageNotFoundError:
+    pass
