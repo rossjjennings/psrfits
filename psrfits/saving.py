@@ -49,7 +49,10 @@ def construct_primary_hdu(ds):
     smjd = (ds.start_time - Time(imjd, format='mjd')).to(u.s).value
     header_cards = {
         'fitstype': 'PSRFITS',
-        'hdrver': '6.1',
+        # Setting HDRVER = '6.1' makes PSRCHIVE look for (and not find)
+        # a column named 'REF_FREQ' in the generated file.
+        # So, leaving as '5.4' for now.
+        'hdrver': '5.4',
         'date': datetime.strftime(datetime.now(), '%Y-%m-%dT%H:%M:%S'),
         'obsfreq': ds.center_freq.to(u.MHz).value,
         'obsbw': ds.bandwidth.to(u.MHz).value,
