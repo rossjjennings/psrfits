@@ -178,7 +178,7 @@ class Observation(AttrCollection):
             'obs_mode': self.mode,
             'date-obs': date_str,
             'coord_md': 'J2000',
-            'equinox': '2000.0',
+            'equinox': 2000.0,
             'ra': coords_icrs.ra.to_string(unit=u.hourangle, sep=':'),
             'dec': coords_icrs.dec.to_string(unit=u.deg, sep=':'),
             'stt_crd1': start_coord1_str,
