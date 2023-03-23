@@ -87,13 +87,13 @@ class Dataset:
         and Astropy Quantity and Time objects, are copied, but other attributes,
         including Dask arrays, which are meant to be immutable, are not.
         '''
-        attrs = {}
+        out = self.__class__()
         for attr, value in self.__dict__.items():
-            if isinstance(attr, np.ndarray) or isinstance(attr, Time):
-                attrs[attr] = value.copy()
+            if isinstance(value, np.ndarray) or isinstance(value, Time):
+                setattr(out, attr, value.copy())
             else:
-                attrs[attr] = value
-        return self.__class__(data, weights, **attrs)
+                setattr(out, attr, value)
+        return out
 
     def __repr__(self):
         return (
