@@ -157,52 +157,43 @@ def construct_subint_hdu(ds):
     data = np.rint(data).astype('i2')
     
     coords = ds.observation.coords
+
+    data = []
+    data.append((('INDEXVAL', '>f8'), ds.index))
+    data.append((('TSUBINT', '>f8'), ds.duration.data))
+    data.append((('OFFS_SUB', '>f8'), (ds.epoch - ds.start_time).to(u.s).value))
+    if hasattr(ds, 'lst'):
+        data.append((('LST_SUB', '>f8'), ds.lst.hourangle*3600))
+    if hasattr(ds, 'coords'):
+        data.append((('RA_SUB', '>f8'), ds.coords.ra.deg))
+        data.append((('DEC_SUB', '>f8'), ds.coords.dec.deg))
+    if hasattr(ds, 'coords_galactic'):
+        data.append((('GLON_SUB', '>f8'), ds.coords_galactic.l.deg))
+        data.append((('GLAT_SUB', '>f8'), ds.coords_galactic.b.deg))
+    if hasattr(ds, 'feed_angle'):
+        data.append((('FD_ANG', '>f8'), ds.feed_angle))
+    if hasattr(ds, 'pos_angle'):
+        data.append((('POS_ANG', '>f8'), ds.pos_angle))
+    if hasattr(ds, 'par_angle'):
+        data.append((('PAR_ANG', '>f8'), ds.par_angle))
+    if hasattr(ds, 'coords_altaz'):
+        data.append((('TEL_AZ', '>f8'), ds.coords_altaz.az.deg))
+        data.append((('TEL_ZEN', '>f8'), 90 - ds.coords_altaz.alt.deg))
+    data.append((('AUX_DM', '>f8'), ds.aux_dm.to(u.pc/u.cm**3).value))
+    data.append((('AUX_RM', '>f8'), ds.aux_rm.to(u.rad/u.m**2).value))
+    data.append((('DAT_FREQ', '>f8', (ds.freq.size,)))
+                np.tile(ds.freq, ds.epoch.size).reshape(ds.epoch.size, -1))
+    data.append((('DAT_WTS', '>f8', (ds.freq.size,)), ds.weights))
+    data.append((('DAT_OFFS', '>f8', (ds.n_polns*ds.freq.size,)),
+                 offsets.reshape(ds.epoch.size, -1)))
+    data.append((('DAT_SCL', '>f8', (ds.n_polns*ds.freq.size,)),
+                 scales.reshape(ds.epoch.size, -1)))
+    data.append((('DATA', '>f8', (ds.n_polns, ds.freq.size, ds.phase.size)), data))
+
     subint_data = np.rec.fromarrays(
-        [
-            ds.index,
-            ds.duration.data,
-            (ds.epoch - ds.start_time).to(u.s).value,
-            ds.lst.hourangle*3600,
-            ds.coords.ra.deg,
-            ds.coords.dec.deg,
-            ds.coords_galactic.l.deg,
-            ds.coords_galactic.b.deg,
-            ds.feed_angle,
-            ds.pos_angle,
-            ds.par_angle,
-            ds.coords_altaz.az.deg,
-            90 - ds.coords_altaz.alt.deg,
-            ds.aux_dm.to(u.pc/u.cm**3).value,
-            ds.aux_rm.to(u.rad/u.m**2).value,
-            np.tile(ds.freq, ds.epoch.size).reshape(ds.epoch.size, -1),
-            ds.weights,
-            offsets.reshape(ds.epoch.size, -1),
-            scales.reshape(ds.epoch.size, -1),
-            data,
-        ],
-        dtype=(np.record, [
-                ('INDEXVAL', '>f8'),
-                ('TSUBINT', '>f8'),
-                ('OFFS_SUB', '>f8'),
-                ('LST_SUB', '>f8'),
-                ('RA_SUB', '>f8'),
-                ('DEC_SUB', '>f8'),
-                ('GLON_SUB', '>f8'),
-                ('GLAT_SUB', '>f8'),
-                ('FD_ANG', '>f4'),
-                ('POS_ANG', '>f4'),
-                ('PAR_ANG', '>f4'),
-                ('TEL_AZ', '>f4'),
-                ('TEL_ZEN', '>f4'),
-                ('AUX_DM', '>f8'),
-                ('AUX_RM', '>f8'),
-                ('DAT_FREQ', '>f8', (ds.freq.size,)),
-                ('DAT_WTS', '>f4', (ds.freq.size,)),
-                ('DAT_OFFS', '>f4', (ds.n_polns*ds.freq.size,)),
-                ('DAT_SCL', '>f4', (ds.n_polns*ds.freq.size,)),
-                ('DATA', '>i2', (ds.n_polns, ds.freq.size, ds.phase.size)),
-            ]),
-        )
+        [item[1] for item in data],
+        dtype=(np.record, [item[0] for item in data])
+    )
     
     subint_hdu = fits.BinTableHDU(data=subint_data)
     

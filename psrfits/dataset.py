@@ -64,13 +64,20 @@ class Dataset:
         out.epoch = Time(np.concatenate([df.epoch for df in datafiles]))
         out.duration = np.concatenate([df.duration for df in datafiles])
         out.index = np.concatenate([df.index for df in datafiles])
-        out.lst = np.concatenate([df.lst for df in datafiles])
-        out.coords = SkyCoord(np.concatenate([df.coords for df in datafiles]))
-        out.feed_angle = np.concatenate([df.feed_angle for df in datafiles])
-        out.pos_angle = np.concatenate([df.pos_angle for df in datafiles])
-        out.par_angle = np.concatenate([df.par_angle for df in datafiles])
-        out.coords_galactic = SkyCoord(np.concatenate([df.coords_galactic for df in datafiles]))
-        out.coords_altaz = SkyCoord(np.concatenate([df.coords for df in datafiles]))
+        if all(hasattr(df, 'lst') for df in datafiles):
+            out.lst = np.concatenate([df.lst for df in datafiles])
+        if all(hasattr(df, 'coords') for df in datafiles):
+            out.coords = SkyCoord(np.concatenate([df.coords for df in datafiles]))
+        if all(hasattr(df, 'feed_angle') for df in datafiles):
+            out.feed_angle = np.concatenate([df.feed_angle for df in datafiles])
+        if all(hasattr(df, 'pos_angle') for df in datafiles):
+            out.pos_angle = np.concatenate([df.pos_angle for df in datafiles])
+        if all(hasattr(df, 'par_angle') for df in datafiles):
+            out.par_angle = np.concatenate([df.par_angle for df in datafiles])
+        if all(hasattr(df, 'coords_galactic') for df in datafiles):
+            out.coords_galactic = SkyCoord(np.concatenate([df.coords_galactic for df in datafiles]))
+        if all(hasattr(df, 'coords_altaz') for df in datafiles):
+            out.coords_altaz = SkyCoord(np.concatenate([df.coords for df in datafiles]))
         out.aux_dm = np.concatenate([df.aux_dm for df in datafiles])
         out.aux_rm = np.concatenate([df.aux_rm for df in datafiles])
 
