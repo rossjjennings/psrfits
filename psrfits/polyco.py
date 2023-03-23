@@ -109,7 +109,8 @@ class PolycoModel(AttrCollection):
             site = rec['NSITE'],
             ref_freq = rec['REF_FREQ']*u.MHz,
             start_phase = rec['PRED_PHS'],
-            ref_epoch = Time(rec['REF_MJD'], format='pulsar_mjd'),
+            # need scale='utc' here to retain precision -- shouldn't it be the default?
+            ref_epoch = Time(rec['REF_MJD'], scale='utc', format='pulsar_mjd'),
             ref_phase = rec['REF_PHS'],
             ref_f0 = rec['REF_F0']*u.Hz,
             log10_fit_err = rec['LGFITERR'],
