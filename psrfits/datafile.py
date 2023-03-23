@@ -85,7 +85,7 @@ class DataFile(Dataset):
 
         # special values
         if 'polyco' in hdulist:
-            out.predictor = PolycoHistory(hdulist['polyco'].data)
+            out.polyco = PolycoHistory(hdulist['polyco'].data)
         if 't2predict' in hdulist:
             out.predictor = ChebyModelSet.parse(
                 [line[0] for line in hdulist['t2predict'].data]

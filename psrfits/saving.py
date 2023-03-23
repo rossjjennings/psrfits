@@ -10,8 +10,6 @@ import toml
 import os.path
 
 from .attrs.attrcollection import if_missing
-from .polyco import PolycoHistory
-from .t2predict import ChebyModelSet
 from .polarization import get_pols
 
 def save(filename, ds, overwrite=False):
@@ -27,10 +25,9 @@ def to_hdulist(ds):
     hdus.append(construct_history_hdu(ds))
     hdus.append(construct_psrparam_hdu(ds))
     if ds.predictor is not None:
-        if isinstance(ds.predictor, ChebyModelSet):
-            hdus.append(construct_t2predict_hdu(ds))
-        elif isinstance(ds.predictor, PolycoHistory):
-            hdus.append(construct_polyco_hdu(ds))
+        hdus.append(construct_t2predict_hdu(ds))
+    if ds.polyco is not None:
+        hdus.append(construct_polyco_hdu(ds))
     hdus.append(construct_subint_hdu(ds))
     return fits.HDUList(hdus)
 
@@ -113,7 +110,7 @@ def construct_polyco_hdu(ds):
     '''
     Construct Polyco HDU
     '''
-    polyco_data = ds.polyco_history.as_table()
+    polyco_data = ds.polyco.as_table()
     polyco_hdu = fits.BinTableHDU(data=polyco_data)
     polyco_hdu.header['tunit7'] = 'MHz'
     polyco_hdu.header['tunit11'] = 'Hz'
