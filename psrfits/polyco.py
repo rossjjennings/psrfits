@@ -126,13 +126,13 @@ class PolycoModel(AttrCollection):
         return description
 
     def __call__(self, time, extend_prec=True, check_bounds=True):
-        dt = self.dt(time, check_bounds)
+        dt = self.dt(time, extend_prec, check_bounds)
         ref_f0 = self.ref_f0.to(u.Hz).value
         phase = self.ref_phase + dt*60*ref_f0 + polynomial.polyval(dt, self.coeffs)
         return phase
 
     def f0(self, time, extend_prec=True, check_bounds=True):
-        dt = self.dt(time, check_bounds)
+        dt = self.dt(time, extend_prec, check_bounds)
         ref_f0 = self.ref_f0.to(u.Hz).value
 
         der_coeffs = polynomial.polyder(self.coeffs)
