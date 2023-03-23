@@ -171,24 +171,24 @@ def construct_subint_hdu(ds):
         items.append((('GLON_SUB', '>f8'), ds.coords_galactic.l.deg))
         items.append((('GLAT_SUB', '>f8'), ds.coords_galactic.b.deg))
     if hasattr(ds, 'feed_angle'):
-        items.append((('FD_ANG', '>f8'), ds.feed_angle))
+        items.append((('FD_ANG', '>f4'), ds.feed_angle))
     if hasattr(ds, 'pos_angle'):
-        items.append((('POS_ANG', '>f8'), ds.pos_angle))
+        items.append((('POS_ANG', '>f4'), ds.pos_angle))
     if hasattr(ds, 'par_angle'):
-        items.append((('PAR_ANG', '>f8'), ds.par_angle))
+        items.append((('PAR_ANG', '>f4'), ds.par_angle))
     if hasattr(ds, 'coords_altaz'):
-        items.append((('TEL_AZ', '>f8'), ds.coords_altaz.az.deg))
-        items.append((('TEL_ZEN', '>f8'), 90 - ds.coords_altaz.alt.deg))
+        items.append((('TEL_AZ', '>f4'), ds.coords_altaz.az.deg))
+        items.append((('TEL_ZEN', '>f4'), 90 - ds.coords_altaz.alt.deg))
     items.append((('AUX_DM', '>f8'), ds.aux_dm.to(u.pc/u.cm**3).value))
     items.append((('AUX_RM', '>f8'), ds.aux_rm.to(u.rad/u.m**2).value))
     items.append((('DAT_FREQ', '>f8', (ds.freq.size,)),
                 np.tile(ds.freq, ds.epoch.size).reshape(ds.epoch.size, -1)))
-    items.append((('DAT_WTS', '>f8', (ds.freq.size,)), ds.weights))
-    items.append((('DAT_OFFS', '>f8', (ds.n_polns*ds.freq.size,)),
+    items.append((('DAT_WTS', '>f4', (ds.freq.size,)), ds.weights))
+    items.append((('DAT_OFFS', '>f4', (ds.n_polns*ds.freq.size,)),
                  offsets.reshape(ds.epoch.size, -1)))
-    items.append((('DAT_SCL', '>f8', (ds.n_polns*ds.freq.size,)),
+    items.append((('DAT_SCL', '>f4', (ds.n_polns*ds.freq.size,)),
                  scales.reshape(ds.epoch.size, -1)))
-    items.append((('DATA', '>f8', (ds.n_polns, ds.freq.size, ds.phase.size)), data))
+    items.append((('DATA', '>i2', (ds.n_polns, ds.freq.size, ds.phase.size)), data))
 
     subint_data = np.rec.fromarrays(
         [item[1] for item in items],
