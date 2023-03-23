@@ -72,7 +72,7 @@ class DataFile(Dataset):
             phs_offs = 0.
         phase = np.linspace(0., nbin/nbin_prd, nbin, endpoint=False) + phs_offs
 
-        start_time = Time(primary_hdu.header['stt_imjd'], format='pulsar_mjd')
+        start_time = Time(primary_hdu.header['stt_imjd'], scale='utc', format='pulsar_mjd')
         start_time += primary_hdu.header['stt_smjd']*u.s
         start_time += primary_hdu.header['stt_offs']*u.s
 

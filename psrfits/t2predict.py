@@ -35,8 +35,16 @@ class ChebyModel:
             elif parts[0] == 'SITENAME':
                 args['sitename'] = parts[1]
             elif parts[0] == 'TIME_RANGE':
-                args['start_time'] = Time(np.longdouble(parts[1]), format='pulsar_mjd_long')
-                args['end_time'] = Time(np.longdouble(parts[2]), format='pulsar_mjd_long')
+                args['start_time'] = Time(
+                    np.longdouble(parts[1]),
+                    scale='utc',
+                    format='pulsar_mjd_long',
+                )
+                args['end_time'] = Time(
+                    np.longdouble(parts[2]),
+                    scale='utc',
+                    format='pulsar_mjd_long',
+                )
             elif parts[0] == 'FREQ_RANGE':
                 args['start_freq'] = np.longdouble(parts[1])*u.MHz
                 args['end_freq'] = np.longdouble(parts[2])*u.MHz
