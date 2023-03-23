@@ -8,12 +8,11 @@ import copy
 from .attrcollection import AttrCollection, maybe_missing, if_missing
 
 class History:
-    def __init__(self, entries):
-        self.entries = HistoryEntry.from_table(entries)
-    
     @classmethod
     def from_hdu(cls, hdu):
-        return cls(hdu.data)
+        out = cls()
+        out.entries = HistoryEntry.from_table(hdu.data)
+        return out
     
     def __str__(self):
         return f"<History with {len(self.entries)} entries>"

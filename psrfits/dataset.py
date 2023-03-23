@@ -101,7 +101,9 @@ class Dataset:
             if isinstance(value, np.ndarray) or isinstance(value, Time):
                 setattr(out, attr, value.copy())
             elif isinstance(value, History):
-                setattr(out, attr, copy.deepcopy(value))
+                history = History()
+                history.entries = copy.deepcopy(self.history.entries)
+                setattr(out, attr, history)
             else:
                 setattr(out, attr, value)
         return out
