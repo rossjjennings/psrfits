@@ -139,8 +139,7 @@ class Dataset:
         '''
         Dedisperse the data with the given DM and reference frequency.
         If `DM` is `None`, use the DM attribute of `ds`.
-        If `ref_freq` is `None`, use the center frequency from the latest entry
-        in `ds.history`.
+        If `ref_freq` is `None`, use the polyco reference frequency.
         '''
         return dispersion.dedisperse(self, inplace=True, DM=DM, ref_freq=ref_freq)
 
