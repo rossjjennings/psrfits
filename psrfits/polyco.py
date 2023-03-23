@@ -137,17 +137,17 @@ class PolycoModel(AttrCollection):
 
         der_coeffs = polynomial.polyder(self.coeffs)
         f0 = ref_f0 + polynomial.polyval(dt, der_coeffs)/60
-        return f0
+        return f0*u.Hz
     
     def dt(self, time, extend_prec=True, check_bounds=True):
         mjd = time.mjd_long if extend_prec else time.mjd
         ref_mjd = self.ref_epoch.mjd
-        mjd_start = ref_mjd - self.span/1440
-        mjd_end = ref_mjd + self.span/1440
+        mjd_start = ref_mjd - self.span/2/1440 # convert minutes to days
+        mjd_end = ref_mjd + self.span/2/1440 # convert minutes to days
         if check_bounds and np.any((mjd < mjd_start) | (mjd > mjd_end)):
             raise ValueError(f'MJD {mjd[(mjd < mjd_start) | (mjd > mjd_end)]} out of bounds.')
 
-        dt = (mjd - ref_mjd)*1440 # minutes
+        dt = (mjd - ref_mjd)*1440 # convert days to minutes
         return dt
 
     def date_as_string(self):
