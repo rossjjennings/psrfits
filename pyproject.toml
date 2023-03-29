@@ -15,6 +15,7 @@ dependencies = [
     "toml",
     "pywavelets",
     "dask",
+    "setuptools-scm",
 ]
 
 [tool.setuptools_scm]
