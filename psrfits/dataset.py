@@ -293,3 +293,17 @@ class Dataset:
                  signed data using a diverging colormap.
         '''
         return plots.plot_pulsetrain(self, pulsetrain, ax, sym_lim, vmin, vmax, **kwargs)
+
+    def plot_freqtime(self, data, ax=None, sym_lim=False, vmin=None, vmax=None, **kwargs):
+        '''
+        Make a pseudocolor plot of a set of data as a function of frequency and time
+        using metadata from the given Dataset. Additional keyword arguments will be passed on to plt.pcolormesh().
+
+        Parameters
+        ----------
+        profile: Profile (array of data vs. pulse phase) to plot
+        ax:      Axes in which to plot. If `None`, the current Axes will be used.
+        sym_lim: Symmetrize the colorbar limits around zero. Useful when plotting
+                signed data using a diverging colormap.
+        '''
+        return plots.plot_freqtime(self, data, ax, sym_lim, vmin, vmax, **kwargs)
