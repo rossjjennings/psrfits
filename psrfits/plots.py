@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import astropy.units as u
 from psrfits.dispersion import fft_roll
 
-def sym_lim(data, vmin=None, vmax=None):
+def symmetrize_limits(data, vmin=None, vmax=None):
     '''
     Produce symmetric limits for a set of data based on the data itself and
     (optionally) explicitly supplied upper or lower limits.
@@ -37,7 +37,7 @@ def plot_portrait(ds, portrait, ax=None, sym_lim=False, vmin=None, vmax=None, ph
         ax = plt.gca()
     portrait = fft_roll(portrait, len(ds.phase)*phase_shift)
     if sym_lim:
-        vmin, vmax = sym_lim(portrait, vmin, vmax)
+        vmin, vmax = symmetrize_limits(portrait, vmin, vmax)
     phase = ds.phase - phase_shift
     freq = ds.freq.to(u.MHz).value
     pc = ax.pcolormesh(phase, freq, portrait, vmin=vmin, vmax=vmax, **kwargs)
@@ -85,7 +85,7 @@ def plot_pulsetrain(ds, pulsetrain, ax=None, sym_lim=False, vmin=None, vmax=None
         ax = plt.gca()
     pulsetrain = fft_roll(pulsetrain, len(ds.phase)*phase_shift)
     if sym_lim:
-        vmin, vmax = sym_lim(pulsetrain, vmin, vmax)
+        vmin, vmax = symmetrize_limits(pulsetrain, vmin, vmax)
     phase = ds.phase - phase_shift
     mjd = ds.epoch.mjd
     pc = ax.pcolormesh(phase, mjd, pulsetrain, vmin=vmin, vmax=vmax, **kwargs)
@@ -108,7 +108,7 @@ def plot_freqtime(ds, data, ax=None, sym_lim=False, vmin=None, vmax=None, **kwar
     if ax is None:
         ax = plt.gca()
     if sym_lim:
-        vmin, vmax = sym_lim(pulsetrain, vmin, vmax)
+        vmin, vmax = symmetrize_limits(pulsetrain, vmin, vmax)
     mjd = ds.epoch.mjd
     freq = ds.freq.to(u.MHz).value
     pc = ax.pcolormesh(mjd, freq, data.T, vmin=vmin, vmax=vmax, **kwargs)
