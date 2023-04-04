@@ -15,9 +15,6 @@ from psrfits.attrs import *
 from psrfits.helpers import get_pint_model, wavelet_smooth
 from psrfits.plots import plot_portrait, plot_profile, plot_pulsetrain, plot_freqtime
 from psrfits.averaging import avg_portrait, avg_profile, avg_pulsetrain
-try:
-    from setuptools_scm import get_version
-    __version__ = get_version(root='..', relative_to=__file__)
-except (LookupError, ModuleNotFoundError):
-    # not an editable install, use the build-time version
-    from psrfits._version import __version__
+
+from . import _version
+__version__ = _version.get_versions()['version']

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools >= 61.0", "setuptools_scm[toml] >= 6.2"]
+requires = ["setuptools >= 61.0", "versioneer[toml] == 0.28"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -17,5 +17,10 @@ dependencies = [
     "dask",
 ]
 
-[tool.setuptools_scm]
-write_to = "psrfits/_version.py"
+[tool.versioneer]
+VCS = "git"
+style = "pep440"
+versionfile_source = "psrfits/_version.py"
+versionfile_build = "psrfits/_version.py"
+tag_prefix = "v"
+parentdir_prefix = "psrfits-"
