@@ -7,7 +7,8 @@ from psrfits.dispersion import dedisperse, align_with_predictor
 from psrfits.baseline import remove_baseline
 
 def load(filename, weight=False, uniformize_freqs=False, prepare=False,
-         use_predictor=True, baseline_method='avgprof', loader='lazy'):
+         use_predictor=True, baseline_method='avgprof', loader='lazy',
+         extrap=False):
     '''
     Open a PSRFITS file and load the contents into a Dataset.
 
@@ -25,19 +26,20 @@ def load(filename, weight=False, uniformize_freqs=False, prepare=False,
     baseline_method (default: 'avgprof'): The method used to determine the baseline
         level when it is to be removed. Options are 'avgprof', 'offpulse', and 'median'.
         See psrfits.baseline.remove_baseline() for details.
-    wcfreq (default: False): Whether to use a "weighted" center frequency. This can be
-        used to replicate the behaviour of PyPulse, but generally is best left alone.
     loader (default: 'lazy'): Possible values are 'lazy', 'memmap', or 'eager'. For 'lazy',
         the data will be read into a Dask array using dask.delayed, and read only when
         necessary. No file handle will be retained. For 'memmap', the data will be
         memory-mapped and read into a Dask array, retaining a file handle. For 'eager',
         the data will be read into memory immediately.
+    extrap (default: False): If `True`, allow extrapolation when calculating the pulse
+        phase using a Tempo2 predictor. Ignored if `prepare` is `False`, or if no Tempo2
+        predictor is present.
     '''
     ds = DataFile.from_file(filename, uniformize_freqs=uniformize_freqs, loader=loader)
     if prepare:
         if use_predictor:
             try:
-                ds.align_with_predictor()
+                ds.align_with_predictor(out_of_bounds=('extrap' if extrap else 'error'))
             except AttributeError:
                 ds.dedisperse()
         else:
