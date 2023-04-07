@@ -1,0 +1,84 @@
+# Information on observing frequencies for various receivers,
+# and how they are typically represented in PSRFITS files.
+# Useful for automatically collecting data from multiple files
+# where some have gaps in frequency coverage or other oddities.
+# Mostly NANOGrav receivers are represented for now.
+
+# To add: ASP/GASP, UWBR-VEGAS, Parkes receivers?
+
+[L-wide-PUPPI]
+dir = -1
+start = 1780.0
+nchan = 512
+chan_bw = 1.5625
+edge = "left"
+
+[S-wide-PUPPI]
+dir = -1
+start = 2430.0
+nchan = 512
+chan_bw = 1.5625
+edge = "left"
+
+[430-PUPPI]
+dir = 1
+start = 380.0
+nchan = 64
+chan_bw = 1.5625
+edge = "left"
+
+[327-PUPPI]
+dir = 1
+start = 277.0
+nchan = 64
+chan_bw = 1.5625
+edge = "left"
+
+[Rcvr1_2-GUPPI]
+dir = 1
+start = 1100.0
+nchan = 512
+chan_bw = 1.5625
+edge = "left"
+
+[Rcvr_800-GUPPI]
+dir = -1
+start = 920.0
+nchan = 128
+chan_bw = 1.5625
+edge = "left"
+
+[Rcvr1_2-VEGAS]
+dir = -1
+start = 1900.0
+nchan = 512
+chan_bw = 1.5625
+edge = "left"
+
+[Rcvr_800-VEGAS]
+dir = -1
+start = 920.0
+nchan = 512
+chan_bw = 1.5625
+edge = "left"
+
+["1.5GHz-YUPPI"]
+dir = 1
+start = 1008.0
+nchan = 1024
+chan_bw = 1.0
+edge = "mid"
+
+[3GHz-YUPPI]
+dir = 1
+start = 1976.0
+nchan = 2048
+chan_bw = 1.0
+edge = "mid"
+
+[6GHz-YUPPI]
+dir = 1
+start = 3976.0
+nchan = 2016
+chan_bw = 2.0
+edge = "mid"
