@@ -19,18 +19,23 @@ class DataFile(Dataset):
     An object representing a PSRFITS file.
     '''
     @classmethod
-    def from_file(cls, filename, loader='lazy', uniformize_freqs=False):
+    def from_file(cls, filename, loader='memmap', uniformize_freqs=False):
         '''
         Construct a DataFile object from a PSRFITS file.
 
         Parameters
         ----------
         filename: Name of the file to read data from.
-        loader: Possible values are 'lazy', 'memmap', or 'eager'. For 'lazy' (the default),
-                the data will be read into a Dask array using dask.delayed, and read only
-                when necessary. No file handle will be retained. For 'memmap', the data will
-                be memory-mapped and read into a Dask array, retaining a file handle. For
-                'eager', the data will be read into memory immediately.
+        loader: Possible values are 'copy', 'memmap', 'delayed', 'delayed_memmap', or 'astropy'.
+                With 'copy', the data will be read into memory immediately.
+                With 'memmap' (the default), the data will be memory mapped and read into
+                  a Dask array, retaining a file handle.
+                With 'delayed', the data will be read into a Dask array using dask.delayed.
+                  This is useful because it does not leave a file handle open, but is slower
+                  than the 'memmap' approach when the data are first read.
+                With 'delayed_memmap', the data will be memory mapped and read into a Dask
+                  array using dask.delayed, which should not leave a file handle open.
+                With 'astropy', the memory mapping internal to astropy.io.fits will be used.
         uniformize_freqs: Whether to attempt to correct over-rounded frequency values.
         '''
         hdulist = fits.open(filename)
@@ -153,12 +158,15 @@ class DataFile(Dataset):
         out.aux_rm = subint_hdu.data['aux_rm'].copy()*u.rad/u.m**2
         hdulist.close()
 
-        if loader == 'lazy':
-            load = load_delayed
-        elif loader == 'mmap':
-            load = load_mmap
-        elif loader == 'eager':
+        elif loader == 'copy':
             load = load_copy
+        if loader == 'delayed':
+            load = load_delayed
+        elif loader == 'astropy':
+            load = load_memmap
+        elif loader == 'memmap':
+            load = load_memmap
+        elif loader == 'delayed_memmap':
 
         data = load(filename, 'subint', 'data')
         scale = load(filename, 'subint', 'dat_scl')
@@ -218,16 +226,47 @@ def load_delayed(filename, hdu, column):
     # If this were not the case, it would keep around an open file handle.
     return da.from_delayed(arr, shape, dtype, name=f'{filename}.{hdu}.{column}')
 
-def load_memmap(filename, hdu, column, chunks=None):
+def load_astropy(filename, hdu, column, chunks="auto"):
     '''
     Make a Dask array from a column of an HDU within a memory-mapped FITS file.
+    This version uses Astropy's internal mechanisms to manage the memory map.
     The array will be faster to work with than if _load_delayed() were used, but
     it will keep around an open file handle, and if too many files are read
     this way, you might get a "too many open files" error.
     '''
     hdul = fits.open(filename)
-    arr = hdul[hdu].data[col]
+    arr = hdul[hdu].data[column]
     hdul.close()
     # Providing a `name` argument to `da.from_array()` is crucial for performance,
     # since otherwise the name is derived by hashing each chunk.
     return da.from_array(arr, name=f'{filename}.{hdu}.{column}', chunks=chunks)
+
+def load_memmap(filename, hdu, column, chunks="auto"):
+    '''
+    Make a Dask array from a column of an HDU within a fits file. Uses Astropy to
+    collect initial information about the location of data within the file, and then
+    constructs a memory map separately. This should not leave dangling Astropy objects.
+    However, because of the memory map, it will still leave a file open.
+    '''
+    hdul = fits.open(filename)
+    data_dtype = hdul[hdu].data.dtype
+    data_shape = hdul[hdu].data.shape
+    offset = hdul[hdu].fileinfo()['datLoc']
+    hdul.close()
+    data = np.memmap(filename, mode='r', offset=offset, dtype=data_dtype, shape=data_shape)
+    return da.from_array(data[column.upper()], name=f'{filename}.{hdu}.{column}', chunks=chunks)
+
+def load_delayed_memmap(filename, hdu, column):
+    '''
+    Make a Dask array from a column of an HDU within a fits file. This is a combination
+    of `load_delayed` and `load_memmap`: It returns a Dask array which is based on a delayed
+    numpy memmap. In theory, this should allow some of the speed advantages of memmap, without
+    keeping a file open.
+    '''
+    hdul = fits.open(filename)
+    data_dtype = hdul[hdu].data.dtype
+    data_shape = hdul[hdu].data.shape
+    offset = hdul[hdu].fileinfo()['datLoc']
+    hdul.close()
+    data = np.memmap(filename, mode='r', offset=offset, dtype=data_dtype, shape=data_shape)
+    return da.from_array(data[column.upper()], name=f'{filename}.{hdu}.{column}', chunks=chunks)
