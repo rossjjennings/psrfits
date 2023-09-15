@@ -169,7 +169,7 @@ class DataFile(Dataset):
         elif loader == 'delayed_memmap':
             load = load_delayed_memmap
 
-        data = load(filename, 'subint', 'data')
+        data = load(filename, 'subint', 'data', chunks=('auto', 'auto', 'auto', -1))
         scale = load(filename, 'subint', 'dat_scl')
         scale = scale.reshape(data.shape[:3])
         offset = load(filename, 'subint', 'dat_offs')
@@ -202,7 +202,7 @@ class DataFile(Dataset):
 
         return out
 
-def load_copy(filename, hdu, column):
+def load_copy(filename, hdu, column, chunks="auto"):
     '''
     Open a FITS file and make an in-memory copy of a specific HDU column.
     Intended to be used in delayed form by _load_delayed.
@@ -212,7 +212,7 @@ def load_copy(filename, hdu, column):
     hdul.close()
     return arr
 
-def load_delayed(filename, hdu, column):
+def load_delayed(filename, hdu, column, chunks="auto"):
     '''
     Make a single-chunk Dask array from a column of an HDU within a FITS file,
     using dask.delayed to open and read the file only when needed.
@@ -257,7 +257,7 @@ def load_memmap(filename, hdu, column, chunks="auto"):
     data = np.memmap(filename, mode='r', offset=offset, dtype=data_dtype, shape=data_shape)
     return da.from_array(data[column.upper()], name=f'{filename}.{hdu}.{column}', chunks=chunks)
 
-def load_delayed_memmap(filename, hdu, column):
+def load_delayed_memmap(filename, hdu, column, chunks="auto"):
     '''
     Make a Dask array from a column of an HDU within a fits file. This is a combination
     of `load_delayed` and `load_memmap`: It returns a Dask array which is based on a delayed
