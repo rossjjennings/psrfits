@@ -158,15 +158,16 @@ class DataFile(Dataset):
         out.aux_rm = subint_hdu.data['aux_rm'].copy()*u.rad/u.m**2
         hdulist.close()
 
-        elif loader == 'copy':
+        if loader == 'copy':
             load = load_copy
-        if loader == 'delayed':
+        elif loader == 'delayed':
             load = load_delayed
         elif loader == 'astropy':
-            load = load_memmap
+            load = load_astropy
         elif loader == 'memmap':
             load = load_memmap
         elif loader == 'delayed_memmap':
+            load = load_delayed_memmap
 
         data = load(filename, 'subint', 'data')
         scale = load(filename, 'subint', 'dat_scl')
