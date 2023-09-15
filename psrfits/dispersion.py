@@ -64,7 +64,7 @@ def dedisperse(ds, inplace=False, DM=None, ref_freq=None):
     time_delays = dispersion_dt(ds, delta_DM, ref_freq)
 
     tbin = ds.history.time_per_bin
-    bin_delays = time_delays/tbin
+    bin_delays = (time_delays/tbin).to("").value
 
     new_ds = ds if inplace else ds.copy()
     for pol in get_pols(ds):
