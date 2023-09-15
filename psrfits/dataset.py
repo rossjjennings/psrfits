@@ -215,7 +215,9 @@ class Dataset:
         compute: Call compute() on the result, if it is a Dask array.
         progress: Display a progress bar during the computation.
         '''
-        return averaging.avg_profile(self, poln, low_freq, high_freq, start_mjd, stop_mjd, use_weights)
+        return averaging.avg_profile(
+            self, poln, low_freq, high_freq, start_mjd, stop_mjd, use_weights, compute, progress
+        )
 
     def avg_portrait(self, poln='I', start_mjd=-np.inf, stop_mjd=np.inf, use_weights=True,
                      compute=True, progress=False):
@@ -232,7 +234,9 @@ class Dataset:
         compute: Call compute() on the result, if it is a Dask array.
         progress: Display a progress bar during the computation.
         '''
-        return averaging.avg_portrait(self, poln, start_mjd, stop_mjd, use_weights)
+        return averaging.avg_portrait(
+            self, poln, start_mjd, stop_mjd, use_weights, compute, progress
+        )
 
     def avg_pulsetrain(self, poln='I', low_freq=-np.inf, high_freq=np.inf, use_weights=True,
                        compute=True, progress=False):
@@ -250,7 +254,9 @@ class Dataset:
         compute: Call compute() on the result, if it is a Dask array.
         progress: Display a progress bar during the computation.
         '''
-        return averaging.avg_pulsetrain(self, poln, low_freq, high_freq, use_weights)
+        return averaging.avg_pulsetrain(
+            self, poln, low_freq, high_freq, use_weights, compute, progress
+        )
 
     def plot_profile(self, profile, ax=None, **kwargs):
         '''
