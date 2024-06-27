@@ -142,7 +142,10 @@ class HistoryEntry(AttrCollection):
     def from_table(cls, table):
         entries = [{} for i in range(table.size)]
         for i in range(table.size):
-            timestamp = datetime.strptime(table['date_pro'][i], '%a %b %d %H:%M:%S %Y')
+            try:
+                timestamp = datetime.strptime(table['date_pro'][i], '%a %b %d %H:%M:%S %Y')
+            except ValueError:
+                timestamp = datetime.strptime(table['date_pro'][i], '%Y-%m-%d %H:%M:%S.%f')
             entries[i] = {
                 'date': Time(timestamp),
                 'command': maybe_missing(table['proc_cmd'][i]),
