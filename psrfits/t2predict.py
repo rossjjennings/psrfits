@@ -246,7 +246,7 @@ class ChebyModelSet:
                     'nan' (return not-a-number).
         """
         time_broadcast, freq_broadcast = broadcast_time_freq(time, freq)
-        phase = np.empty(np.broadcast_shapes(time.shape, freq.shape), dtype=np.float128)
+        f0 = np.empty(np.broadcast_shapes(time.shape, freq.shape), dtype=np.float128)
 
         closest_segment = self.closest_segment(time, freq)
         for i, segment in enumerate(self.segments):
