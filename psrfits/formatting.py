@@ -37,7 +37,7 @@ def fmt_skycoord(skycoord):
     component_names = list(skycoord.representation_component_names)
     if 'distance' in component_names and skycoord.distance == 1.0:
         component_names.remove('distance')
-    values = ', '.join(f'{name}={getattr(skycoord, name):g}' for name in component_names)
+    values = ', '.join(f'{name}={getattr(skycoord, name)[0]:g}' for name in component_names)
     return f'<{class_name} ({frame_name}): {values}>'
 
 def fmt_element(elt):
